@@ -1,0 +1,685 @@
+.user-management-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding-bottom: 40px;
+}
+
+/* 顶部导航 */
+.user-management-header {
+  background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-width: 100%;
+}
+
+.back-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.header-title {
+  flex: 1;
+  color: white;
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.header-spacer {
+  width: 36px;
+}
+
+/* 主内容区 */
+.user-management-content {
+  padding: 24px 20px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+/* 统计卡片 */
+.stats-grid-user {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  padding: 24px 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.stat-total {
+  background: linear-gradient(135deg, #e1bee7 0%, #ce93d8 100%);
+  border-color: #ba68c8;
+}
+
+.stat-pending {
+  background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%);
+  border-color: #ffe699;
+}
+
+.stat-approved {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-color: #a5d6a7;
+}
+
+.stat-rejected {
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  border-color: #ef9a9a;
+}
+
+.stat-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.stat-number {
+  font-size: 36px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 15px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Tab切换 */
+.tabs {
+  display: flex;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.tab {
+  flex: 1;
+  padding: 14px 12px;
+  border: none;
+  background: white;
+  color: #666;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-bottom: 3px solid transparent;
+}
+
+.tab:hover {
+  background-color: #f5f5f5;
+  color: #1976d2;
+}
+
+.tab.active {
+  color: #1976d2;
+  border-bottom-color: #1976d2;
+  font-weight: 600;
+  background-color: #f8f9fa;
+}
+
+/* 用户列表 */
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.user-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.3s;
+}
+
+.user-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.user-info-section {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+
+.user-avatar-large {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.user-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.user-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.role-badge {
+  padding: 4px 12px;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.user-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.status-badge-user {
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge-user.status-pending {
+  background: #fff9e6;
+  color: #f57c00;
+}
+
+.status-badge-user.status-approved {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.status-badge-user.status-rejected {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-approve-user,
+.btn-reject-user,
+.btn-edit-roles,
+.btn-delete-user {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-approve-user {
+  background: #4caf50;
+  color: white;
+}
+
+.btn-approve-user:hover {
+  background: #43a047;
+}
+
+.btn-reject-user {
+  background: #f44336;
+  color: white;
+}
+
+.btn-reject-user:hover {
+  background: #d32f2f;
+}
+
+.btn-edit-roles {
+  background: #1976d2;
+  color: white;
+}
+
+.btn-edit-roles:hover {
+  background: #1565c0;
+}
+
+.btn-delete-user {
+  background: #ff5722;
+  color: white;
+  border: 1px solid #ff5722;
+}
+
+.btn-delete-user:hover {
+  background: #e64a19;
+  border-color: #e64a19;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 87, 34, 0.3);
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 48px 16px;
+  color: #999;
+  background: white;
+  border-radius: 12px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* 弹窗 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.modal-subtitle {
+  color: #666;
+  font-size: 14px;
+  margin: 0 0 20px 0;
+}
+
+/* 角色选择 */
+.roles-selection {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.role-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.role-option:hover {
+  border-color: #1976d2;
+  background: #f5f5f5;
+}
+
+.role-option.selected {
+  border-color: #1976d2;
+  background: #e3f2fd;
+}
+
+.role-icon {
+  font-size: 24px;
+}
+
+.role-label {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+}
+
+.role-check {
+  font-size: 20px;
+  color: #1976d2;
+  font-weight: bold;
+}
+
+.selected-roles-preview {
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.selected-roles-preview strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.preview-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #1976d2;
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  margin: 4px 4px 4px 0;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modal-buttons button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.modal-buttons button:first-child {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.modal-buttons button:first-child:hover {
+  background: #d0d0d0;
+}
+
+.modal-buttons button.primary {
+  background: #1976d2;
+  color: white;
+}
+
+.modal-buttons button.primary:hover {
+  background: #1565c0;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .user-management-header {
+    padding: 16px 20px;
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .header-left, .header-right {
+    width: 100%;
+  }
+  
+  .header-right {
+    justify-content: space-between;
+  }
+  
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  
+  .user-name {
+    font-size: 16px;
+  }
+  
+  .role-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+  
+  .back-btn {
+    padding: 10px 16px;
+    font-size: 14px;
+    min-height: 44px;
+  }
+  
+  .user-management-content {
+    padding: 16px;
+  }
+  
+  .stats-grid-user {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .stat-card-user {
+    padding: 16px;
+  }
+  
+  .stat-value-user {
+    font-size: 28px;
+  }
+  
+  .stat-label-user {
+    font-size: 13px;
+  }
+  
+  .tabs-container {
+    margin-bottom: 20px;
+  }
+  
+  .tabs {
+    gap: 8px;
+    padding: 0 16px;
+    flex-wrap: wrap;
+  }
+  
+  .tab {
+    font-size: 14px;
+    padding: 10px 16px;
+    min-height: 44px;
+  }
+
+  .user-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px;
+  }
+  
+  .user-info {
+    width: 100%;
+  }
+  
+  .user-name-text {
+    font-size: 16px;
+  }
+  
+  .user-email {
+    font-size: 13px;
+  }
+  
+  .user-roles {
+    font-size: 12px;
+  }
+
+  .user-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .action-buttons {
+    width: 100%;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-approve-user,
+  .btn-reject-user,
+  .btn-edit-roles {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 13px;
+    min-height: 44px;
+  }
+  
+  .modal-content {
+    max-width: 95%;
+    margin: 20px;
+    padding: 20px;
+  }
+  
+  .modal-header h2 {
+    font-size: 18px;
+  }
+  
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+  }
+  
+  .form-group label {
+    font-size: 13px;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .modal-actions button {
+    width: 100%;
+    min-height: 44px;
+  }
+  
+  .role-option {
+    padding: 12px;
+  }
+  
+  .role-label {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-management-header {
+    padding: 12px 16px;
+  }
+  
+  .user-info-header {
+    gap: 12px;
+  }
+  
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+  
+  .user-name {
+    font-size: 15px;
+  }
+  
+  .user-management-content {
+    padding: 12px;
+  }
+  
+  .stats-grid-user {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-card-user {
+    padding: 20px 16px;
+  }
+  
+  .tabs {
+    padding: 0 12px;
+    gap: 6px;
+  }
+  
+  .tab {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+  
+  .user-card {
+    padding: 14px;
+  }
+  
+  .user-name-text {
+    font-size: 15px;
+  }
+  
+  .modal-content {
+    padding: 16px;
+    margin: 16px;
+  }
+  
+  .modal-header h2 {
+    font-size: 16px;
+  }
+}
+

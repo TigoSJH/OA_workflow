@@ -1,0 +1,24 @@
+# Backend .env sample for Jiejiang OA Workflow
+
+# Core
+NODE_ENV=development
+PORT=3001
+MONGODB_URI=mongodb://localhost:27017/workflow_db
+JWT_SECRET=change_this_in_production
+
+# SMS switch: mock / aliyun
+SMS_PROVIDER=mock
+
+# Aliyun SMS (fill in production)
+ALIBABA_CLOUD_ACCESS_KEY_ID=
+ALIBABA_CLOUD_ACCESS_KEY_SECRET=
+SMS_REGION=cn-hangzhou
+SMS_SIGN_NAME=
+SMS_TEMPLATE_CODE_LOGIN=
+SMS_TEMPLATE_CODE_REGISTER=
+
+# Limits
+SMS_CODE_TTL=300
+SMS_SEND_INTERVAL=60
+SMS_SEND_LIMIT_PER_HOUR=5
+

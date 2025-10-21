@@ -1,0 +1,218 @@
+/* 全局样式 */
+html {
+  /* 防止移动端字体大小自动调整 */
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* 防止移动端双击放大 */
+  touch-action: manipulation;
+  /* iOS滚动流畅 */
+  -webkit-overflow-scrolling: touch;
+  /* 防止文本被选中 */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 允许输入框和文本域被选中 */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* 全局移动端优化 */
+* {
+  -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
+  box-sizing: border-box; /* 统一盒模型 */
+}
+
+/* 移动端按钮样式 */
+button, 
+a.button,
+input[type="button"],
+input[type="submit"],
+[role="button"] {
+  /* 防止长按弹出菜单 */
+  -webkit-touch-callout: none;
+  /* 防止被选中 */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* 光标样式 */
+  cursor: pointer;
+}
+
+/* 移动端输入框优化 */
+input, 
+textarea, 
+select {
+  /* 移除iOS默认阴影 */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  /* 防止iOS输入框放大 */
+  font-size: 16px;
+}
+
+/* 移动端滚动容器优化 */
+.scrollable {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* 移动端特定优化 */
+@media (max-width: 768px) {
+  /* 确保body占满整个视口 */
+  html, body, #root {
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  
+  /* 移动端按钮最小点击区域 */
+  button, 
+  a.button,
+  input[type="button"],
+  input[type="submit"],
+  [role="button"] {
+    min-height: 44px; /* iOS推荐的最小触摸区域 */
+    min-width: 44px;
+  }
+  
+  /* 移动端触摸反馈 */
+  button:active,
+  a.button:active,
+  input[type="button"]:active,
+  input[type="submit"]:active,
+  [role="button"]:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+    transition: all 0.1s ease;
+  }
+  
+  /* 优化移动端表单 */
+  input, textarea, select {
+    border-radius: 8px;
+  }
+  
+  /* 移动端模态框优化 */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* 移动端图片优化 */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* 移动端文本优化 */
+  p, li, span {
+    /* 防止文本在移动端过小 */
+    line-height: 1.5;
+  }
+  
+  /* 移动端表格优化 */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 480px) {
+  /* 小屏手机额外优化 */
+  body {
+    font-size: 14px;
+  }
+  
+  h1 {
+    font-size: 24px;
+  }
+  
+  h2 {
+    font-size: 20px;
+  }
+  
+  h3 {
+    font-size: 18px;
+  }
+}
+
+/* 横屏模式优化 */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* 横屏时减少垂直padding */
+  .header, .footer {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+}
+
+/* 触摸设备专用样式 */
+@media (hover: none) and (pointer: coarse) {
+  /* 移除hover效果，添加active效果 */
+  button:hover {
+    opacity: 1;
+  }
+  
+  button:active {
+    opacity: 0.8;
+  }
+  
+  /* 增大可点击区域 */
+  a {
+    padding: 8px;
+    margin: -8px;
+  }
+}
+
+/* Loading动画全局样式 */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 确保滚动平滑 */
+html {
+  scroll-behavior: smooth;
+}

@@ -1,0 +1,47 @@
+# 依赖
+node_modules/
+backend/node_modules/
+workflow-web/node_modules/
+
+# 日志
+*.log
+npm-debug.log*
+logs/
+
+# 环境变量
+.env
+backend/.env
+workflow-web/.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 构建产物
+build/
+dist/
+workflow-web/build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 测试
+coverage/
+
+# 临时文件
+*.tmp
+.cache/
+
+# 系统文件
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# 其他
+.cursor/
