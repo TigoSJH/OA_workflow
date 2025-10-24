@@ -159,15 +159,6 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
     setPendingNotification(null);
   };
 
-  const filteredProjects = projects.filter(project => {
-    if (activeTab === 'pending') {
-      return !project.warehouseInCompleted;
-    } else if (activeTab === 'completed') {
-      return project.warehouseInCompleted;
-    }
-    return true;
-  });
-
   if (selectedProject) {
     return (
       <WarehouseInDetail
