@@ -76,7 +76,7 @@ const Login = ({ onLogin, onShowRegister }) => {
         <div className="login-header">
           <img className="login-logo" src="/logo.jfif" alt="系统Logo" />
           <h1 className="login-title">解匠OA工作流程</h1>
-          <p className="login-subtitle">现场管理系统</p>
+          <p className="login-subtitle">OA工作流程系统</p>
         </div>
 
         <div className="login-top-actions" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>

@@ -21,8 +21,11 @@
   margin-bottom: 30px;
 }
 
-.robot-icon {
-  font-size: 64px;
+.register-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 12px;
   margin-bottom: 16px;
 }
 

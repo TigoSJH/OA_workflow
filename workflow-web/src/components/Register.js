@@ -91,9 +91,9 @@ const Register = ({ onBackToLogin, onRegisterSuccess }) => {
     <div className="register-container">
       <div className="register-box">
         <div className="register-header">
-          <div className="robot-icon">🦾</div>
+          <img className="register-logo" src="/logo.jfif" alt="系统Logo" />
           <h1 className="register-title">用户注册</h1>
-          <p className="register-subtitle">工业工作流管理系统</p>
+          <p className="register-subtitle">OA工作流程系统</p>
         </div>
 
         <form onSubmit={handleSubmit} className="register-form">
