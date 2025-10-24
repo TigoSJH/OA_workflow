@@ -14,7 +14,7 @@ const ProjectAssembly = ({ user, onLogout, activeRole, onRoleSwitch }) => {
   const [pendingNotification, setPendingNotification] = useState(null);
   const [deadlineWarning, setDeadlineWarning] = useState(null); // 截止日期预警
 
-  // 加载从加工推送过来的项目
+  // 加载从入库推送过来的项目
   useEffect(() => {
     loadProjects();
   }, []);
@@ -68,11 +68,11 @@ const ProjectAssembly = ({ user, onLogout, activeRole, onRoleSwitch }) => {
   const loadProjects = async () => {
     try {
       setLoading(true);
-      // 获取加工已完成的项目
+      // 获取入库已完成的项目
       const response = await projectAPI.getProjects({ status: 'approved' });
-      // 过滤出加工已完成的项目
+      // 过滤出入库已完成的项目
       const assemblyProjects = (response.projects || []).filter(p => 
-        p.processingCompleted === true
+        p.warehouseInCompleted === true
       );
       setProjects(assemblyProjects);
     } catch (error) {
@@ -252,9 +252,9 @@ const ProjectAssembly = ({ user, onLogout, activeRole, onRoleSwitch }) => {
           </div>
         ) : filteredProjects.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">📭</div>
-            <h3>暂无项目</h3>
-            <p>等待加工推送项目到装配阶段</p>
+          <div className="empty-icon">📭</div>
+          <h3>暂无项目</h3>
+          <p>等待入库推送项目到装配阶段</p>
           </div>
         ) : (
           <div className="project-grid">

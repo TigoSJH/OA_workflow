@@ -14,7 +14,7 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
   const [pendingNotification, setPendingNotification] = useState(null);
   const [deadlineWarning, setDeadlineWarning] = useState(null); // 截止日期预警
 
-  // 加载从调试推送过来的项目
+  // 加载从加工推送过来的项目（加工 -> 入库）
   useEffect(() => {
     loadProjects();
   }, []);
@@ -68,11 +68,11 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
   const loadProjects = async () => {
     try {
       setLoading(true);
-      // 获取调试已完成的项目
+      // 获取加工已完成的项目
       const response = await projectAPI.getProjects({ status: 'approved' });
-      // 过滤出调试已完成的项目
+      // 过滤出加工已完成的项目
       const warehouseInProjects = (response.projects || []).filter(p => 
-        p.testingCompleted === true
+        p.processingCompleted === true
       );
       setProjects(warehouseInProjects);
     } catch (error) {
@@ -82,23 +82,8 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
     }
   };
 
-  // 计算剩余天数
-  const calculateRemainingDays = (project) => {
-    if (!project.timelines || !project.timelines.warehouseTime) {
-      return null;
-    }
-
-    // 优先使用入库开始时间；没有则回退到调试完成时间
-    const startTimeRaw = project.timelines.warehouseInStartTime || project.testingCompletedTime;
-    if (!startTimeRaw) return null;
-
-    const startTime = new Date(startTimeRaw);
-    const now = new Date();
-    const elapsedDays = Math.floor((now - startTime) / (1000 * 60 * 60 * 24));
-    const remainingDays = project.timelines.warehouseTime - elapsedDays;
-    
-    return remainingDays;
-  };
+  // 入库阶段不再显示时间周期/剩余时间
+  const calculateRemainingDays = () => null;
 
   // 检查截止日期预警
   useEffect(() => {
@@ -263,7 +248,7 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
           <div className="empty-state">
             <div className="empty-icon">📭</div>
             <h3>暂无项目</h3>
-            <p>等待调试完成后推送到入库阶段</p>
+            <p>等待加工完成后推送到入库阶段</p>
           </div>
         ) : (
           <div className="project-grid">
@@ -292,9 +277,7 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                     <span>💰 预算：{project.budget ? `${project.budget} 万` : '未设置'}</span>
                     <span>👤 申请人：{project.createdByName || '未知'}</span>
                     <span>📅 时间：{project.createTime ? new Date(project.createTime).toLocaleString('zh-CN') : '未知'}</span>
-                  {project.timelines && project.timelines.warehouseTime > 0 && (
-                    <span>⏰ 周期：{project.timelines.warehouseTime} 天</span>
-                  )}
+                  {/* 入库阶段不显示周期 */}
                   </div>
                   {!project.warehouseInCompleted && remainingDays !== null && (
                     <div className={`remaining-days ${isUrgent ? 'urgent' : ''}`}>
@@ -314,8 +297,8 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
       {pendingNotification && (
         <NotificationModal
           notification={pendingNotification}
-          onViewProject={(notifId, projId) => handleNotificationClick(notifId, projId)}
-          onIgnore={() => handleIgnoreNotification(pendingNotification.projectId)}
+          onView={(n) => handleNotificationClick(n._id, n.projectId)}
+          onDismiss={(n) => handleIgnoreNotification(n.projectId)}
         />
       )}
 

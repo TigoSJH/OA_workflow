@@ -1,7 +1,13 @@
 // API服务类 - 处理与后端的通信
 class ApiService {
   constructor() {
-    this.baseURL = process.env.REACT_APP_API_URL || 'http://192.168.2.17:3001/api';
+    // 生产环境使用固定的后端地址，开发环境使用本地地址
+    const isProduction = window.location.hostname === 'oa.jjkjoa.top';
+    const defaultURL = isProduction 
+      ? 'https://api.jjkjoa.top/api'  // 生产环境后端地址
+      : `http://${window.location.hostname}:3001/api`;  // 开发环境
+    
+    this.baseURL = process.env.REACT_APP_API_URL || defaultURL;
     this.token = localStorage.getItem('token');
   }
 

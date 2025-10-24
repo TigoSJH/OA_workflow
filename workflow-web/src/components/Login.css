@@ -20,8 +20,11 @@
   margin-bottom: 40px;
 }
 
-.robot-icon {
-  font-size: 64px;
+.login-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 12px;
   margin-bottom: 16px;
 }
 
@@ -188,8 +191,9 @@
     padding: 32px 24px;
   }
   
-  .robot-icon {
-    font-size: 48px;
+  .login-logo {
+    width: 60px;
+    height: 60px;
   }
   
   .login-title {
@@ -230,8 +234,9 @@
     font-size: 13px;
   }
   
-  .robot-icon {
-    font-size: 40px;
+  .login-logo {
+    width: 52px;
+    height: 52px;
   }
 }
 

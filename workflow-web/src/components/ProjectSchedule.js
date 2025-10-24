@@ -17,8 +17,7 @@ const ProjectSchedule = ({ user, onLogout, projectId, onComplete, activeRole, on
     purchaserTime: 0,
     processorTime: 0,
     assemblerTime: 0,
-    testerTime: 0,
-    warehouseTime: 0
+    testerTime: 0
   });
 
   // 加载项目详情
@@ -52,8 +51,7 @@ const ProjectSchedule = ({ user, onLogout, projectId, onComplete, activeRole, on
             purchaserTime: foundProject.timelines.purchaserTime || 0,
             processorTime: foundProject.timelines.processorTime || 0,
             assemblerTime: foundProject.timelines.assemblerTime || 0,
-            testerTime: foundProject.timelines.testerTime || 0,
-            warehouseTime: foundProject.timelines.warehouseTime || 0
+            testerTime: foundProject.timelines.testerTime || 0
           });
         }
       } else {
@@ -103,8 +101,7 @@ const ProjectSchedule = ({ user, onLogout, projectId, onComplete, activeRole, on
       timelines.purchaserTime,
       timelines.processorTime,
       timelines.assemblerTime,
-      timelines.testerTime,
-      timelines.warehouseTime
+      timelines.testerTime
     ];
     return values.reduce((sum, v) => sum + (parseInt(v, 10) || 0), 0);
   };
@@ -147,8 +144,7 @@ const ProjectSchedule = ({ user, onLogout, projectId, onComplete, activeRole, on
     purchaser: '采购',
     processor: '加工',
     assembler: '装配',
-    tester: '调试',
-    warehouse: '入库出库'
+    tester: '调试'
   };
 
   if (loading) {

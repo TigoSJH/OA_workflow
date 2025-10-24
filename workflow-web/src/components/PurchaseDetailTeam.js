@@ -43,7 +43,6 @@ const PurchaseDetailTeam = ({ project, user, onBack }) => {
   
   // 主负责人整合后的采购文档
   const [purchaseDocuments, setPurchaseDocuments] = useState(project.purchaseDocuments || []);
-  const [invoiceDocuments, setInvoiceDocuments] = useState(project.invoiceDocuments || []);
 
   // 文件夹展开/折叠状态
   const [expandedFolders, setExpandedFolders] = useState({
@@ -51,8 +50,7 @@ const PurchaseDetailTeam = ({ project, user, onBack }) => {
     engSection: false,
     myUploadSection: false,
     teamUploadsSection: false,
-    purchaseSection: false,
-    invoiceSection: false
+    purchaseSection: false
   });
 
   // 切换文件夹展开状态
@@ -66,7 +64,6 @@ const PurchaseDetailTeam = ({ project, user, onBack }) => {
   // 当 project 变化时，更新状态
   useEffect(() => {
     setPurchaseDocuments(project.purchaseDocuments || []);
-    setInvoiceDocuments(project.invoiceDocuments || []);
     setIsCompleted(!!project.purchaseCompleted);
     
     // 如果是普通采购人员，加载之前上传的内容
@@ -202,45 +199,7 @@ const PurchaseDetailTeam = ({ project, user, onBack }) => {
     e.target.value = '';
   };
 
-  // 处理发票选择
-  const handleInvoiceSelect = async (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    
-    if (selectedFiles.length === 0) return;
-
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
-    for (let file of selectedFiles) {
-      if (!allowedTypes.includes(file.type)) {
-        alert('只能上传图片或PDF文件');
-        return;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        alert(`文件 ${file.name} 超过10MB限制`);
-        return;
-      }
-    }
-
-    try {
-      setUploading(true);
-      
-      const filePromises = selectedFiles.map(file => {
-        if (file.type.startsWith('image/')) {
-          return compressImage(file);
-        } else {
-          return processFile(file);
-        }
-      });
-      const newFiles = await Promise.all(filePromises);
-      
-      setInvoiceDocuments([...invoiceDocuments, ...newFiles]);
-      setUploading(false);
-    } catch (error) {
-      setUploading(false);
-      console.error('文件处理失败:', error.message);
-    }
-
-    e.target.value = '';
-  };
+  // 发票上传已取消（仅保留采购清单）
 
   // 删除文件
   const handleDeleteFile = (index, isSubmitted, category = 'purchase') => {
@@ -251,13 +210,8 @@ const PurchaseDetailTeam = ({ project, user, onBack }) => {
     
     if (window.confirm('确认删除这个文件吗？')) {
       if (isPrimaryLeader) {
-        if (category === 'purchase') {
-          const newDocs = purchaseDocuments.filter((_, i) => i !== index);
-          setPurchaseDocuments(newDocs);
-        } else {
-          const newDocs = invoiceDocuments.filter((_, i) => i !== index);
-          setInvoiceDocuments(newDocs);
-        }
+        const newDocs = purchaseDocuments.filter((_, i) => i !== index);
+        setPurchaseDocuments(newDocs);
       } else {
         const newFiles = myUploadFiles.filter((_, i) => i !== index);
         setMyUploadFiles(newFiles);
@@ -352,8 +306,7 @@ const PurchaseDetailTeam = ({ project, user, onBack }) => {
         purchaseCompleted: true,
         purchaseCompletedTime: new Date().toISOString(),
         purchaseCompletedBy: user.displayName || user.username,
-        purchaseDocuments: purchaseDocuments,
-        invoiceDocuments: invoiceDocuments
+        purchaseDocuments: purchaseDocuments
       });
 
       console.log('推送成功:', response);
@@ -606,25 +559,6 @@ const PurchaseDetailTeam = ({ project, user, onBack }) => {
                   支持图片、PDF格式，单个最大10MB
                 </div>
               </div>
-              
-              {isPrimaryLeader && (
-                <div className="upload-group">
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleInvoiceSelect}
-                    id="invoice-upload"
-                    style={{ display: 'none' }}
-                    accept="image/*,.pdf"
-                  />
-                  <label htmlFor="invoice-upload" className="upload-button">
-                    📤 上传发票图片
-                  </label>
-                  <div className="upload-hint-inline">
-                    支持图片、PDF格式，单个最大10MB
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -760,16 +694,7 @@ const PurchaseDetailTeam = ({ project, user, onBack }) => {
             'purchase'
           )}
           
-          {/* 主负责人：发票文档 */}
-          {isPrimaryLeader && invoiceDocuments.length > 0 && renderFileFolder(
-            'invoiceSection',
-            '发票图片',
-            invoiceDocuments,
-            '🧾',
-            true,
-            (index) => handleDeleteFile(index, false, 'invoice'),
-            'invoice'
-          )}
+          {/* 发票图片功能已取消 */}
         </div>
 
         {/* 推送按钮 - 只有主负责人可以推送 */}

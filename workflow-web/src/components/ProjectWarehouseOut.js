@@ -68,11 +68,11 @@ const ProjectWarehouseOut = ({ user, onLogout, activeRole, onRoleSwitch }) => {
   const loadProjects = async () => {
     try {
       setLoading(true);
-      // 获取入库已完成的项目
+      // 获取调试已完成的项目（调试 -> 出库）
       const response = await projectAPI.getProjects({ status: 'approved' });
-      // 过滤出入库已完成的项目
+      // 过滤出调试已完成的项目
       const warehouseOutProjects = (response.projects || []).filter(p => 
-        p.warehouseInCompleted === true
+        p.testingCompleted === true
       );
       setProjects(warehouseOutProjects);
     } catch (error) {
@@ -82,23 +82,8 @@ const ProjectWarehouseOut = ({ user, onLogout, activeRole, onRoleSwitch }) => {
     }
   };
 
-  // 计算剩余天数
-  const calculateRemainingDays = (project) => {
-    if (!project.timelines || !project.timelines.warehouseTime) {
-      return null;
-    }
-
-    // 优先使用出库开始时间；没有则回退到入库完成时间
-    const startTimeRaw = project.timelines.warehouseOutStartTime || project.warehouseInCompletedTime;
-    if (!startTimeRaw) return null;
-
-    const startTime = new Date(startTimeRaw);
-    const now = new Date();
-    const elapsedDays = Math.floor((now - startTime) / (1000 * 60 * 60 * 24));
-    const remainingDays = project.timelines.warehouseTime - elapsedDays;
-    
-    return remainingDays;
-  };
+  // 出库阶段不再显示时间周期/剩余时间
+  const calculateRemainingDays = () => null;
 
   // 检查截止日期预警
   useEffect(() => {
@@ -263,7 +248,7 @@ const ProjectWarehouseOut = ({ user, onLogout, activeRole, onRoleSwitch }) => {
           <div className="empty-state">
             <div className="empty-icon">📭</div>
             <h3>暂无项目</h3>
-            <p>等待入库完成后推送到出库阶段</p>
+            <p>等待调试完成后推送到出库阶段</p>
           </div>
         ) : (
           <div className="project-grid">
@@ -292,9 +277,7 @@ const ProjectWarehouseOut = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                     <span>💰 预算：{project.budget ? `${project.budget} 万` : '未设置'}</span>
                     <span>👤 申请人：{project.createdByName || '未知'}</span>
                     <span>📅 时间：{project.createTime ? new Date(project.createTime).toLocaleString('zh-CN') : '未知'}</span>
-                  {project.timelines && project.timelines.warehouseTime > 0 && (
-                    <span>⏰ 周期：{project.timelines.warehouseTime} 天</span>
-                  )}
+                  {/* 出库阶段不显示周期 */}
                   </div>
                   {!project.warehouseOutCompleted && remainingDays !== null && (
                     <div className={`remaining-days ${isUrgent ? 'urgent' : ''}`}>
@@ -314,8 +297,8 @@ const ProjectWarehouseOut = ({ user, onLogout, activeRole, onRoleSwitch }) => {
       {pendingNotification && (
         <NotificationModal
           notification={pendingNotification}
-          onViewProject={(notifId, projId) => handleNotificationClick(notifId, projId)}
-          onIgnore={() => handleIgnoreNotification(pendingNotification.projectId)}
+          onView={(n) => handleNotificationClick(n._id, n.projectId)}
+          onDismiss={(n) => handleIgnoreNotification(n.projectId)}
         />
       )}
 

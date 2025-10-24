@@ -555,6 +555,11 @@ exports.approveProject = async (req, res) => {
       return res.status(400).json({ error: '请提供有效的审批操作' });
     }
     
+    // 只有管理人员可以进行审批
+    if (!req.user.roles || !req.user.roles.includes('manager')) {
+      return res.status(403).json({ error: '只有管理人员可以审批该项目' });
+    }
+
     // 拒绝时必须提供理由
     if (action === 'reject' && !comment) {
       return res.status(400).json({ error: '拒绝时必须填写拒绝理由' });
@@ -580,6 +585,11 @@ exports.approveProject = async (req, res) => {
       return res.status(400).json({ error: '您已经审批过此项目' });
     }
     
+    // 动态计算所需批准次数 = 当前已批准状态的管理人员数量（至少为1）
+    const managersCount = await User.countDocuments({ roles: 'manager', status: 'approved' }).catch(() => 0);
+    const requiredApprovals = Math.max(1, managersCount);
+    pendingProject.approvalProgress.required = requiredApprovals;
+
     // 添加审批记录
     const approvalRecord = {
       approver: req.user.username,
@@ -595,7 +605,7 @@ exports.approveProject = async (req, res) => {
       // 增加批准人数
       pendingProject.approvalProgress.approved += 1;
       
-      // 检查是否达到批准要求（3个人都批准）
+      // 检查是否达到批准要求（由管理人员数量决定）
       if (pendingProject.approvalProgress.approved >= pendingProject.approvalProgress.required) {
         // 达到要求，转移到已批准集合
         const approvedProject = new ApprovedProject({
@@ -617,7 +627,7 @@ exports.approveProject = async (req, res) => {
           originalPendingId: pendingProject._id,
           approver: `多人审批 (${pendingProject.approvalProgress.approved}/${pendingProject.approvalProgress.required})`,
           approveTime: new Date(),
-          approveComment: '三人审批通过',
+          approveComment: `${pendingProject.approvalProgress.required}人审批通过`,
           status: 'approved'
         });
         
@@ -910,6 +920,102 @@ exports.updateProject = async (req, res) => {
       }
     }
 
+    // 如果加工刚完成，通知库管入库（新的流程：加工 -> 入库）
+    if (updateData.processingCompleted === true && !project.processingCompleted) {
+      try {
+        // 可选：设置入库阶段开始时间
+        await Model.updateOne(
+          { _id: project._id },
+          { $set: { 'timelines.warehouseInStartTime': new Date() } },
+          { strict: false }
+        );
+
+        const warehouseUsers = await User.find({ roles: 'warehouse', status: 'approved' });
+        const notificationPromises = warehouseUsers.map(u => new Notification({
+          toUserId: u._id,
+          type: 'project_ready_for_warehousein',
+          title: '新项目待入库',
+          message: `${project.projectName} 已完成加工，请尽快入库` ,
+          projectId: project._id
+        }).save());
+        await Promise.all(notificationPromises);
+        console.log(`已为 ${warehouseUsers.length} 名库管创建入库通知`);
+      } catch (e) {
+        console.error('创建入库通知失败:', e);
+      }
+    }
+
+    // 如果入库刚完成，通知装配（新的流程：入库 -> 装配）
+    if (updateData.warehouseInCompleted === true && !project.warehouseInCompleted) {
+      try {
+        await Model.updateOne(
+          { _id: project._id },
+          { $set: { 'timelines.assemblerStartTime': new Date() } },
+          { strict: false }
+        );
+
+        const assemblers = await User.find({ roles: 'assembler', status: 'approved' });
+        const notificationPromises = assemblers.map(u => new Notification({
+          toUserId: u._id,
+          type: 'project_ready_for_assembly',
+          title: '新项目待装配',
+          message: `${project.projectName} 已完成入库，请开始装配` ,
+          projectId: project._id
+        }).save());
+        await Promise.all(notificationPromises);
+        console.log(`已为 ${assemblers.length} 名装配人员创建项目通知`);
+      } catch (e) {
+        console.error('创建装配人员通知失败:', e);
+      }
+    }
+
+    // 如果装配刚完成，通知调试（确保装配 -> 调试的通知）
+    if (updateData.assemblyCompleted === true && !project.assemblyCompleted) {
+      try {
+        await Model.updateOne(
+          { _id: project._id },
+          { $set: { 'timelines.testerStartTime': new Date() } },
+          { strict: false }
+        );
+
+        const testers = await User.find({ roles: 'tester', status: 'approved' });
+        const notificationPromises = testers.map(u => new Notification({
+          toUserId: u._id,
+          type: 'project_ready_for_testing',
+          title: '新项目待调试',
+          message: `${project.projectName} 已完成装配，请进行调试`,
+          projectId: project._id
+        }).save());
+        await Promise.all(notificationPromises);
+        console.log(`已为 ${testers.length} 名调试人员创建项目通知`);
+      } catch (e) {
+        console.error('创建调试人员通知失败:', e);
+      }
+    }
+
+    // 如果调试刚完成，通知库管出库（新的流程：调试 -> 出库）
+    if (updateData.testingCompleted === true && !project.testingCompleted) {
+      try {
+        await Model.updateOne(
+          { _id: project._id },
+          { $set: { 'timelines.warehouseOutStartTime': new Date() } },
+          { strict: false }
+        );
+
+        const warehouseUsers = await User.find({ roles: 'warehouse', status: 'approved' });
+        const notificationPromises = warehouseUsers.map(u => new Notification({
+          toUserId: u._id,
+          type: 'project_ready_for_warehouseout',
+          title: '新项目待出库',
+          message: `${project.projectName} 已完成调试，请安排出库` ,
+          projectId: project._id
+        }).save());
+        await Promise.all(notificationPromises);
+        console.log(`已为 ${warehouseUsers.length} 名库管创建出库通知`);
+      } catch (e) {
+        console.error('创建出库通知失败:', e);
+      }
+    }
     // 如果工程刚完成，通知所有采购人员并设置采购阶段开始时间
     if (updateData.engineeringCompleted === true && !project.engineeringCompleted) {
       try {

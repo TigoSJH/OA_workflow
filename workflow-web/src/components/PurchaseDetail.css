@@ -1075,14 +1075,13 @@
 
 .upload-actions-area.two-columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: 1fr;
+  justify-items: center;
 }
 
 .upload-group {
-  display: inline-block;
-  margin-right: 16px;
-  margin-bottom: 12px;
+  display: block;
+  margin: 12px auto;
 }
 
 .upload-button-inline {

@@ -74,8 +74,8 @@ const Login = ({ onLogin, onShowRegister }) => {
     <div className="login-container">
       <div className="login-box">
         <div className="login-header">
-          <div className="robot-icon">🦾</div>
-          <h1 className="login-title">解匠OA工作流</h1>
+          <img className="login-logo" src="/logo.jfif" alt="系统Logo" />
+          <h1 className="login-title">解匠OA工作流程</h1>
           <p className="login-subtitle">现场管理系统</p>
         </div>
 

@@ -10,24 +10,8 @@ const WarehouseOutDetail = ({ project, user, onBack }) => {
   const [isCompleted] = useState(!!project.warehouseOutCompleted);
   const [expandedFolders, setExpandedFolders] = useState({});
 
-  // 计算剩余天数
-  const calculateRemainingDays = () => {
-    if (!project.timelines || !project.timelines.warehouseTime) {
-      return null;
-    }
-
-    const startTimeRaw = project.timelines.warehouseOutStartTime || project.warehouseInCompletedTime;
-    if (!startTimeRaw) return null;
-
-    const startTime = new Date(startTimeRaw);
-    const now = new Date();
-    const elapsedDays = Math.floor((now - startTime) / (1000 * 60 * 60 * 24));
-    const remainingDays = project.timelines.warehouseTime - elapsedDays;
-    
-    return remainingDays;
-  };
-
-  const remainingDays = calculateRemainingDays();
+  // 出库阶段不再显示时间周期/剩余时间
+  const remainingDays = null;
 
   const toggleFolder = (folderName) => {
     setExpandedFolders(prev => ({
@@ -202,20 +186,7 @@ const WarehouseOutDetail = ({ project, user, onBack }) => {
                 <span className="info-label">⏱️ 项目时长</span>
                 <span className="info-value">{project.duration ? `${project.duration} 月` : '未设置'}</span>
               </div>
-              {project.timelines && project.timelines.warehouseTime > 0 && (
-                <div className="info-item">
-                  <span className="info-label">⏰ 入库出库周期</span>
-                  <span className="info-value highlight-time">{project.timelines.warehouseTime} 天</span>
-                </div>
-              )}
-              {remainingDays !== null && (
-                <div className="info-item">
-                  <span className="info-label">⏳ 剩余时间</span>
-                  <span className={`info-value ${remainingDays <= 3 && remainingDays >= 0 ? 'urgent-time' : remainingDays < 0 ? 'overdue-time' : 'normal-time'}`}>
-                    {remainingDays >= 0 ? `${remainingDays} 天` : `超期 ${Math.abs(remainingDays)} 天`}
-                  </span>
-                </div>
-              )}
+              {/* 出库阶段不显示周期与剩余时间 */}
             </div>
             <div className="description-box">
               <h5>项目描述：</h5>

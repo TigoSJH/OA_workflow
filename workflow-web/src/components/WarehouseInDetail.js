@@ -10,24 +10,8 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
   const [isCompleted] = useState(!!project.warehouseInCompleted);
   const [expandedFolders, setExpandedFolders] = useState({});
 
-  // 计算剩余天数
-  const calculateRemainingDays = () => {
-    if (!project.timelines || !project.timelines.warehouseTime) {
-      return null;
-    }
-
-    const startTimeRaw = project.timelines.warehouseInStartTime || project.testingCompletedTime;
-    if (!startTimeRaw) return null;
-
-    const startTime = new Date(startTimeRaw);
-    const now = new Date();
-    const elapsedDays = Math.floor((now - startTime) / (1000 * 60 * 60 * 24));
-    const remainingDays = project.timelines.warehouseTime - elapsedDays;
-    
-    return remainingDays;
-  };
-
-  const remainingDays = calculateRemainingDays();
+  // 入库阶段不再设置时间周期/剩余时间
+  const remainingDays = null;
 
   const toggleFolder = (folderName) => {
     setExpandedFolders(prev => ({
@@ -36,7 +20,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
     }));
   };
 
-  // 推送到下一阶段（出库）
+  // 推送到下一阶段（装配）
   const handlePushToNextStage = async () => {
     try {
       setLoading(true);
@@ -202,20 +186,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
                 <span className="info-label">⏱️ 项目时长</span>
                 <span className="info-value">{project.duration ? `${project.duration} 月` : '未设置'}</span>
               </div>
-              {project.timelines && project.timelines.warehouseTime > 0 && (
-                <div className="info-item">
-                  <span className="info-label">⏰ 入库出库周期</span>
-                  <span className="info-value highlight-time">{project.timelines.warehouseTime} 天</span>
-                </div>
-              )}
-              {remainingDays !== null && (
-                <div className="info-item">
-                  <span className="info-label">⏳ 剩余时间</span>
-                  <span className={`info-value ${remainingDays <= 3 && remainingDays >= 0 ? 'urgent-time' : remainingDays < 0 ? 'overdue-time' : 'normal-time'}`}>
-                    {remainingDays >= 0 ? `${remainingDays} 天` : `超期 ${Math.abs(remainingDays)} 天`}
-                  </span>
-                </div>
-              )}
+              {/* 入库阶段不显示周期与剩余时间 */}
             </div>
             <div className="description-box">
               <h5>项目描述：</h5>
@@ -292,7 +263,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
                 <span className="status-text">{project.warehouseInCompletedBy}</span>
               </div>
               <div className="completion-notice">
-                <p>✨ 此项目已推送到出库阶段</p>
+                <p>✨ 此项目已推送到装配阶段</p>
               </div>
             </div>
           </div>
@@ -307,7 +278,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
             </div>
             <div className="warehousein-notice">
               <p>📦 入库管理员无需上传文件或图片</p>
-              <p>✅ 完成入库工作后，点击下方按钮推送到出库阶段即可</p>
+              <p>✅ 完成入库工作后，点击下方按钮推送到装配阶段即可</p>
             </div>
           </div>
         )}
@@ -316,7 +287,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
         {!isCompleted && (
           <div className="push-section">
             <button className="btn-push-bottom" onClick={handlePushToNextStage}>
-              ✅ 入库完成，推送到出库阶段
+              ✅ 入库完成，推送到装配阶段
             </button>
           </div>
         )}
