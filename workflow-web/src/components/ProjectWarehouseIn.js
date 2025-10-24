@@ -7,7 +7,7 @@ import RoleBadges from './RoleBadges';
 import { projectAPI, notificationAPI } from '../services/api';
 
 const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('first'); // 'first' 或 'second'
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
@@ -71,23 +71,33 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
   const loadProjects = async () => {
     try {
       setLoading(true);
-      // 获取加工已完成的项目
       const response = await projectAPI.getProjects({ status: 'approved' });
-      // 过滤出需要入库的项目：
-      // 1. 第一次入库：加工已完成 && 第一次入库未完成
-      // 2. 第二次入库：调试已完成 && 第二次入库未完成
-      const warehouseInProjects = (response.projects || []).filter(p => {
-        const firstWarehouseIn = p.processingCompleted === true && !p.warehouseInCompleted;
-        const secondWarehouseIn = p.testingCompleted === true && p.warehouseInCompleted === true && !p.warehouseInSecondCompleted;
-        return firstWarehouseIn || secondWarehouseIn;
-      });
-      setProjects(warehouseInProjects);
+      setProjects(response.projects || []);
     } catch (error) {
       console.error('加载项目失败:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  // 根据当前标签页过滤项目
+  const getFilteredProjects = () => {
+    if (activeTab === 'first') {
+      // 第一次入库：加工已完成 && 第一次入库未完成
+      return projects.filter(p => 
+        p.processingCompleted === true && !p.warehouseInCompleted
+      );
+    } else {
+      // 第二次入库：调试已完成 && 第一次入库已完成 && 第二次入库未完成
+      return projects.filter(p => 
+        p.testingCompleted === true && 
+        p.warehouseInCompleted === true && 
+        !p.warehouseInSecondCompleted
+      );
+    }
+  };
+
+  const filteredProjects = getFilteredProjects();
 
   // 入库阶段不再显示时间周期/剩余时间
   const calculateRemainingDays = () => null;
@@ -200,24 +210,24 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
       {/* 统计卡片 */}
       <div className="stats-container">
         <div className="stat-card">
-          <div className="stat-icon">📊</div>
+          <div className="stat-icon">📦</div>
           <div className="stat-content">
-            <div className="stat-value">{projects.length}</div>
-            <div className="stat-label">全部项目</div>
+            <div className="stat-value">{projects.filter(p => p.processingCompleted === true && !p.warehouseInCompleted).length}</div>
+            <div className="stat-label">零件待入库</div>
           </div>
         </div>
         <div className="stat-card highlight">
-          <div className="stat-icon">⏳</div>
+          <div className="stat-icon">🏭</div>
           <div className="stat-content">
-            <div className="stat-value">{projects.filter(p => !p.warehouseInCompleted).length}</div>
-            <div className="stat-label">待入库</div>
+            <div className="stat-value">{projects.filter(p => p.testingCompleted === true && p.warehouseInCompleted === true && !p.warehouseInSecondCompleted).length}</div>
+            <div className="stat-label">整机待入库</div>
           </div>
         </div>
         <div className="stat-card success">
           <div className="stat-icon">✅</div>
           <div className="stat-content">
-            <div className="stat-value">{projects.filter(p => p.warehouseInCompleted).length}</div>
-            <div className="stat-label">已完成</div>
+            <div className="stat-value">{projects.filter(p => p.warehouseInSecondCompleted).length}</div>
+            <div className="stat-label">全部完成</div>
           </div>
         </div>
       </div>
@@ -225,22 +235,16 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
       {/* Tab切换 */}
       <div className="tabs-container">
         <button 
-          className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
-          onClick={() => setActiveTab('all')}
+          className={`tab-btn ${activeTab === 'first' ? 'active' : ''}`}
+          onClick={() => setActiveTab('first')}
         >
-          全部 ({projects.length})
+          📦 零件入库 ({projects.filter(p => p.processingCompleted === true && !p.warehouseInCompleted).length})
         </button>
         <button 
-          className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
-          onClick={() => setActiveTab('pending')}
+          className={`tab-btn ${activeTab === 'second' ? 'active' : ''}`}
+          onClick={() => setActiveTab('second')}
         >
-          待入库 ({projects.filter(p => !p.warehouseInCompleted).length})
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'completed' ? 'active' : ''}`}
-          onClick={() => setActiveTab('completed')}
-        >
-          已完成 ({projects.filter(p => p.warehouseInCompleted).length})
+          🏭 整机入库 ({projects.filter(p => p.testingCompleted === true && p.warehouseInCompleted === true && !p.warehouseInSecondCompleted).length})
         </button>
       </div>
 
@@ -255,7 +259,7 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
           <div className="empty-state">
             <div className="empty-icon">📭</div>
             <h3>暂无项目</h3>
-            <p>等待加工完成后推送到入库阶段</p>
+            <p>{activeTab === 'first' ? '等待加工完成后推送到入库阶段' : '等待调试完成后推送到整机入库阶段'}</p>
           </div>
         ) : (
           <div className="project-grid">
