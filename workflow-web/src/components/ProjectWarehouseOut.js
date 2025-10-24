@@ -26,10 +26,13 @@ const ProjectWarehouseOut = ({ user, onLogout, activeRole, onRoleSwitch }) => {
       
       try {
         const res = await notificationAPI.getNotifications({ 
-          unreadOnly: true,
-          type: 'project_ready_for_warehouseout'
+          unreadOnly: true
         });
-        const list = (res.notifications || []).slice();
+        // 过滤第一次和第二次出库的通知
+        const list = (res.notifications || []).filter(n => 
+          n.type === 'project_ready_for_warehouseout' || 
+          n.type === 'project_ready_for_warehouseout_second'
+        ).slice();
         
         // 过滤掉已经被抑制的通知，并验证项目确实已经下发
         const suppressId = localStorage.getItem('suppressNotificationProjectId');
@@ -68,12 +71,15 @@ const ProjectWarehouseOut = ({ user, onLogout, activeRole, onRoleSwitch }) => {
   const loadProjects = async () => {
     try {
       setLoading(true);
-      // 获取调试已完成的项目（调试 -> 出库）
       const response = await projectAPI.getProjects({ status: 'approved' });
-      // 过滤出调试已完成的项目
-      const warehouseOutProjects = (response.projects || []).filter(p => 
-        p.testingCompleted === true
-      );
+      // 过滤出需要出库的项目：
+      // 1. 第一次出库：第一次入库已完成 && 第一次出库未完成
+      // 2. 第二次出库：第二次入库已完成 && 第二次出库未完成
+      const warehouseOutProjects = (response.projects || []).filter(p => {
+        const firstWarehouseOut = p.warehouseInCompleted === true && !p.warehouseOutCompleted;
+        const secondWarehouseOut = p.warehouseInSecondCompleted === true && p.warehouseOutCompleted === true && !p.warehouseOutSecondCompleted;
+        return firstWarehouseOut || secondWarehouseOut;
+      });
       setProjects(warehouseOutProjects);
     } catch (error) {
       console.error('加载项目失败:', error);

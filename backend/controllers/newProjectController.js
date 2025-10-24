@@ -945,8 +945,32 @@ exports.updateProject = async (req, res) => {
       }
     }
 
-    // 如果入库刚完成，通知装配（新的流程：入库 -> 装配）
+    // 如果第一次入库刚完成，通知库管进行第一次出库（领料）
     if (updateData.warehouseInCompleted === true && !project.warehouseInCompleted) {
+      try {
+        await Model.updateOne(
+          { _id: project._id },
+          { $set: { 'timelines.warehouseOutStartTime': new Date() } },
+          { strict: false }
+        );
+
+        const warehouseUsers = await User.find({ roles: 'warehouse', status: 'approved' });
+        const notificationPromises = warehouseUsers.map(u => new Notification({
+          toUserId: u._id,
+          type: 'project_ready_for_warehouseout',
+          title: '新项目待出库',
+          message: `${project.projectName} 已完成入库，请安排出库领料` ,
+          projectId: project._id
+        }).save());
+        await Promise.all(notificationPromises);
+        console.log(`已为 ${warehouseUsers.length} 名库管创建第一次出库通知`);
+      } catch (e) {
+        console.error('创建第一次出库通知失败:', e);
+      }
+    }
+
+    // 如果第一次出库刚完成，通知装配人员
+    if (updateData.warehouseOutCompleted === true && !project.warehouseOutCompleted) {
       try {
         await Model.updateOne(
           { _id: project._id },
@@ -959,7 +983,7 @@ exports.updateProject = async (req, res) => {
           toUserId: u._id,
           type: 'project_ready_for_assembly',
           title: '新项目待装配',
-          message: `${project.projectName} 已完成入库，请开始装配` ,
+          message: `${project.projectName} 已完成出库，请开始装配` ,
           projectId: project._id
         }).save());
         await Promise.all(notificationPromises);
@@ -993,29 +1017,78 @@ exports.updateProject = async (req, res) => {
       }
     }
 
-    // 如果调试刚完成，通知库管出库（新的流程：调试 -> 出库）
+    // 如果调试刚完成，通知库管进行第二次入库（整机入库）
     if (updateData.testingCompleted === true && !project.testingCompleted) {
       try {
         await Model.updateOne(
           { _id: project._id },
-          { $set: { 'timelines.warehouseOutStartTime': new Date() } },
+          { $set: { 'timelines.warehouseInSecondStartTime': new Date() } },
           { strict: false }
         );
 
         const warehouseUsers = await User.find({ roles: 'warehouse', status: 'approved' });
         const notificationPromises = warehouseUsers.map(u => new Notification({
           toUserId: u._id,
-          type: 'project_ready_for_warehouseout',
-          title: '新项目待出库',
-          message: `${project.projectName} 已完成调试，请安排出库` ,
+          type: 'project_ready_for_warehousein_second',
+          title: '新项目待入库（整机）',
+          message: `${project.projectName} 已完成调试，请安排整机入库` ,
           projectId: project._id
         }).save());
         await Promise.all(notificationPromises);
-        console.log(`已为 ${warehouseUsers.length} 名库管创建出库通知`);
+        console.log(`已为 ${warehouseUsers.length} 名库管创建第二次入库通知`);
       } catch (e) {
-        console.error('创建出库通知失败:', e);
+        console.error('创建第二次入库通知失败:', e);
       }
     }
+
+    // 如果第二次入库刚完成，通知库管进行第二次出库（整机出库确认）
+    if (updateData.warehouseInSecondCompleted === true && !project.warehouseInSecondCompleted) {
+      try {
+        await Model.updateOne(
+          { _id: project._id },
+          { $set: { 'timelines.warehouseOutSecondStartTime': new Date() } },
+          { strict: false }
+        );
+
+        const warehouseUsers = await User.find({ roles: 'warehouse', status: 'approved' });
+        const notificationPromises = warehouseUsers.map(u => new Notification({
+          toUserId: u._id,
+          type: 'project_ready_for_warehouseout_second',
+          title: '新项目待出库（整机确认）',
+          message: `${project.projectName} 已完成整机入库，请安排出库确认` ,
+          projectId: project._id
+        }).save());
+        await Promise.all(notificationPromises);
+        console.log(`已为 ${warehouseUsers.length} 名库管创建第二次出库通知`);
+      } catch (e) {
+        console.error('创建第二次出库通知失败:', e);
+      }
+    }
+
+    // 如果第二次出库刚完成，通知管理员归档项目
+    if (updateData.warehouseOutSecondCompleted === true && !project.warehouseOutSecondCompleted) {
+      try {
+        await Model.updateOne(
+          { _id: project._id },
+          { $set: { 'timelines.archiveStartTime': new Date() } },
+          { strict: false }
+        );
+
+        const managers = await User.find({ roles: 'manager', status: 'approved' });
+        const notificationPromises = managers.map(u => new Notification({
+          toUserId: u._id,
+          type: 'project_ready_for_archive',
+          title: '新项目待归档',
+          message: `${project.projectName} 已完成所有流程，请进行项目归档` ,
+          projectId: project._id
+        }).save());
+        await Promise.all(notificationPromises);
+        console.log(`已为 ${managers.length} 名管理员创建归档通知`);
+      } catch (e) {
+        console.error('创建归档通知失败:', e);
+      }
+    }
+
     // 如果工程刚完成，通知所有采购人员并设置采购阶段开始时间
     if (updateData.engineeringCompleted === true && !project.engineeringCompleted) {
       try {

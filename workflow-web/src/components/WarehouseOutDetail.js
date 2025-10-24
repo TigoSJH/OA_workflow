@@ -7,7 +7,10 @@ const WarehouseOutDetail = ({ project, user, onBack }) => {
   const [previewImage, setPreviewImage] = useState(null);
   const [showImagePreview, setShowImagePreview] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [isCompleted] = useState(!!project.warehouseOutCompleted);
+  
+  // 判断是第一次还是第二次出库
+  const isSecondWarehouseOut = project.warehouseInSecondCompleted === true && project.warehouseOutCompleted === true;
+  const [isCompleted] = useState(isSecondWarehouseOut ? !!project.warehouseOutSecondCompleted : !!project.warehouseOutCompleted);
   const [expandedFolders, setExpandedFolders] = useState({});
 
   // 出库阶段不再显示时间周期/剩余时间
@@ -20,16 +23,29 @@ const WarehouseOutDetail = ({ project, user, onBack }) => {
     }));
   };
 
-  // 完成出库（项目结束）
+  // 完成出库
   const handlePushToNextStage = async () => {
     try {
       setLoading(true);
       
-      const response = await projectAPI.updateProject(project.id, {
-        warehouseOutCompleted: true,
-        warehouseOutCompletedTime: new Date().toISOString(),
-        warehouseOutCompletedBy: user.displayName || user.username
-      });
+      let updateData;
+      if (isSecondWarehouseOut) {
+        // 第二次出库（整机出库确认）
+        updateData = {
+          warehouseOutSecondCompleted: true,
+          warehouseOutSecondCompletedTime: new Date().toISOString(),
+          warehouseOutSecondCompletedBy: user.displayName || user.username
+        };
+      } else {
+        // 第一次出库
+        updateData = {
+          warehouseOutCompleted: true,
+          warehouseOutCompletedTime: new Date().toISOString(),
+          warehouseOutCompletedBy: user.displayName || user.username
+        };
+      }
+      
+      const response = await projectAPI.updateProject(project.id, updateData);
 
       console.log('推送成功:', response);
       setLoading(false);
@@ -250,20 +266,30 @@ const WarehouseOutDetail = ({ project, user, onBack }) => {
             <div className="completion-info">
               <div className="status-item">
                 <span className="status-label">完成状态：</span>
-                <span className="status-text status-completed">✅ 已完成出库工作</span>
+                <span className="status-text status-completed">
+                  ✅ 已完成{isSecondWarehouseOut ? '整机' : ''}出库工作
+                </span>
               </div>
               <div className="status-item">
                 <span className="status-label">完成时间：</span>
                 <span className="status-text">
-                  {new Date(project.warehouseOutCompletedTime).toLocaleString('zh-CN')}
+                  {new Date(
+                    isSecondWarehouseOut 
+                      ? project.warehouseOutSecondCompletedTime 
+                      : project.warehouseOutCompletedTime
+                  ).toLocaleString('zh-CN')}
                 </span>
               </div>
               <div className="status-item">
                 <span className="status-label">操作人：</span>
-                <span className="status-text">{project.warehouseOutCompletedBy}</span>
+                <span className="status-text">
+                  {isSecondWarehouseOut 
+                    ? project.warehouseOutSecondCompletedBy 
+                    : project.warehouseOutCompletedBy}
+                </span>
               </div>
               <div className="completion-notice">
-                <p>🎉 此项目已全部完成！</p>
+                <p>{isSecondWarehouseOut ? '🎉 此项目已全部完成！' : '✨ 此项目已推送到装配阶段'}</p>
               </div>
             </div>
           </div>
@@ -278,7 +304,11 @@ const WarehouseOutDetail = ({ project, user, onBack }) => {
             </div>
             <div className="warehouseout-notice">
               <p>📤 出库管理员无需上传文件或图片</p>
-              <p>✅ 完成出库工作后，点击下方按钮即可完成整个项目流程</p>
+              {isSecondWarehouseOut ? (
+                <p>✅ 完成整机出库确认后，点击下方按钮推送到项目归档</p>
+              ) : (
+                <p>✅ 完成出库工作后，点击下方按钮推送到装配阶段</p>
+              )}
             </div>
           </div>
         )}
@@ -287,7 +317,9 @@ const WarehouseOutDetail = ({ project, user, onBack }) => {
         {!isCompleted && (
           <div className="push-section">
             <button className="btn-push-bottom" onClick={handlePushToNextStage}>
-              ✅ 出库完成，转交给项目主管归档
+              {isSecondWarehouseOut 
+                ? '✅ 出库完成，转交给项目主管归档' 
+                : '✅ 出库完成，推送到装配阶段'}
             </button>
           </div>
         )}
@@ -335,8 +367,10 @@ const WarehouseOutDetail = ({ project, user, onBack }) => {
         <div className="success-modal-overlay">
           <div className="success-modal-content">
             <div className="success-icon">✅</div>
-            <div className="success-message">出库完成！</div>
-            <div className="success-submessage">项目已全部完成</div>
+            <div className="success-message">{isSecondWarehouseOut ? '整机出库' : '出库'}完成！</div>
+            <div className="success-submessage">
+              {isSecondWarehouseOut ? '项目已全部完成' : '项目已推送到装配阶段'}
+            </div>
           </div>
         </div>
       )}

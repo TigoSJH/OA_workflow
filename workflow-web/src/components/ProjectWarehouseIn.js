@@ -26,10 +26,13 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
       
       try {
         const res = await notificationAPI.getNotifications({ 
-          unreadOnly: true,
-          type: 'project_ready_for_warehousein'
+          unreadOnly: true
         });
-        const list = (res.notifications || []).slice();
+        // 过滤第一次和第二次入库的通知
+        const list = (res.notifications || []).filter(n => 
+          n.type === 'project_ready_for_warehousein' || 
+          n.type === 'project_ready_for_warehousein_second'
+        ).slice();
         
         // 过滤掉已经被抑制的通知，并验证项目确实已经下发
         const suppressId = localStorage.getItem('suppressNotificationProjectId');
@@ -70,10 +73,14 @@ const ProjectWarehouseIn = ({ user, onLogout, activeRole, onRoleSwitch }) => {
       setLoading(true);
       // 获取加工已完成的项目
       const response = await projectAPI.getProjects({ status: 'approved' });
-      // 过滤出加工已完成的项目
-      const warehouseInProjects = (response.projects || []).filter(p => 
-        p.processingCompleted === true
-      );
+      // 过滤出需要入库的项目：
+      // 1. 第一次入库：加工已完成 && 第一次入库未完成
+      // 2. 第二次入库：调试已完成 && 第二次入库未完成
+      const warehouseInProjects = (response.projects || []).filter(p => {
+        const firstWarehouseIn = p.processingCompleted === true && !p.warehouseInCompleted;
+        const secondWarehouseIn = p.testingCompleted === true && p.warehouseInCompleted === true && !p.warehouseInSecondCompleted;
+        return firstWarehouseIn || secondWarehouseIn;
+      });
       setProjects(warehouseInProjects);
     } catch (error) {
       console.error('加载项目失败:', error);

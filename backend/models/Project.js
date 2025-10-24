@@ -220,7 +220,7 @@ const projectSchema = new mongoose.Schema({
     type: String
   },
 
-  // 出库阶段相关
+  // 出库阶段相关（第一次出库：装配前领料）
   warehouseOutCompleted: {
     type: Boolean,
     default: false
@@ -229,6 +229,30 @@ const projectSchema = new mongoose.Schema({
     type: Date
   },
   warehouseOutCompletedBy: {
+    type: String
+  },
+
+  // 第二次入库阶段相关（整机入库）
+  warehouseInSecondCompleted: {
+    type: Boolean,
+    default: false
+  },
+  warehouseInSecondCompletedTime: {
+    type: Date
+  },
+  warehouseInSecondCompletedBy: {
+    type: String
+  },
+
+  // 第二次出库阶段相关（整机出库确认）
+  warehouseOutSecondCompleted: {
+    type: Boolean,
+    default: false
+  },
+  warehouseOutSecondCompletedTime: {
+    type: Date
+  },
+  warehouseOutSecondCompletedBy: {
     type: String
   },
 
