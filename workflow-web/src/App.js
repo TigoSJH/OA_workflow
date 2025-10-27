@@ -6,8 +6,10 @@ import ProjectPurchase from './components/ProjectPurchase';
 import ProjectProcessing from './components/ProjectProcessing';
 import ProjectAssembly from './components/ProjectAssembly';
 import ProjectTesting from './components/ProjectTesting';
-import ProjectWarehouseIn from './components/ProjectWarehouseIn';
-import ProjectWarehouseOut from './components/ProjectWarehouseOut';
+import WarehouseInFirst from './components/WarehouseInFirst';
+import WarehouseInSecond from './components/WarehouseInSecond';
+import WarehouseOutFirst from './components/WarehouseOutFirst';
+import WarehouseOutSecond from './components/WarehouseOutSecond';
 import AdminPanel from './components/AdminPanel';
 import ProjectInitiation from './components/ProjectInitiation';
 import ProjectDevelopment from './components/ProjectDevelopment';
@@ -27,6 +29,8 @@ function App() {
   const [activeRole, setActiveRole] = useState(null); // 当前激活的角色
   const [openProjectId, setOpenProjectId] = useState(null);
   const [pendingNotification, setPendingNotification] = useState(null);
+  const [warehouseInPage, setWarehouseInPage] = useState('first'); // 'first' 或 'second'
+  const [warehouseOutPage, setWarehouseOutPage] = useState('first'); // 'first' 或 'second'
 
   // 页面加载时检查是否有 token，如果有则自动恢复登录状态
   useEffect(() => {
@@ -394,26 +398,52 @@ function App() {
 
     // 入库管理员
     if (activeRole === 'warehouse_in') {
-      return (
-        <ProjectWarehouseIn 
-          user={user} 
-          onLogout={handleLogout}
-          activeRole={activeRole}
-          onRoleSwitch={handleRoleSwitch}
-        />
-      );
+      if (warehouseInPage === 'first') {
+        return (
+          <WarehouseInFirst 
+            user={user} 
+            onLogout={handleLogout}
+            activeRole={activeRole}
+            onRoleSwitch={handleRoleSwitch}
+            onSwitchToSecond={() => setWarehouseInPage('second')}
+          />
+        );
+      } else {
+        return (
+          <WarehouseInSecond 
+            user={user} 
+            onLogout={handleLogout}
+            activeRole={activeRole}
+            onRoleSwitch={handleRoleSwitch}
+            onSwitchToFirst={() => setWarehouseInPage('first')}
+          />
+        );
+      }
     }
 
     // 出库管理员
     if (activeRole === 'warehouse_out') {
-      return (
-        <ProjectWarehouseOut 
-          user={user} 
-          onLogout={handleLogout}
-          activeRole={activeRole}
-          onRoleSwitch={handleRoleSwitch}
-        />
-      );
+      if (warehouseOutPage === 'first') {
+        return (
+          <WarehouseOutFirst 
+            user={user} 
+            onLogout={handleLogout}
+            activeRole={activeRole}
+            onRoleSwitch={handleRoleSwitch}
+            onSwitchToSecond={() => setWarehouseOutPage('second')}
+          />
+        );
+      } else {
+        return (
+          <WarehouseOutSecond 
+            user={user} 
+            onLogout={handleLogout}
+            activeRole={activeRole}
+            onRoleSwitch={handleRoleSwitch}
+            onSwitchToFirst={() => setWarehouseOutPage('first')}
+          />
+        );
+      }
     }
     
     // 其他情况
