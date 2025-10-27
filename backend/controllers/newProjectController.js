@@ -775,11 +775,11 @@ exports.updateProject = async (req, res) => {
     // 检查权限：
     // - 创建者可以
     // - 管理员可以
-    // - 已批准项目允许 researcher/engineer/purchaser/processor/assembler/tester/warehouse 角色上传和更新项目
+    // - 已批准项目允许 researcher/engineer/purchaser/processor/assembler/tester/warehouse_in/warehouse_out 角色上传和更新项目
     let canEdit = false;
     if (project.createdBy.toString() === req.user._id.toString()) canEdit = true;
     if (req.user.roles.includes('manager')) canEdit = true;
-    if (category === 'approved' && (req.user.roles.includes('researcher') || req.user.roles.includes('engineer') || req.user.roles.includes('purchaser') || req.user.roles.includes('processor') || req.user.roles.includes('assembler') || req.user.roles.includes('tester') || req.user.roles.includes('warehouse'))) {
+    if (category === 'approved' && (req.user.roles.includes('researcher') || req.user.roles.includes('engineer') || req.user.roles.includes('purchaser') || req.user.roles.includes('processor') || req.user.roles.includes('assembler') || req.user.roles.includes('tester') || req.user.roles.includes('warehouse_in') || req.user.roles.includes('warehouse_out'))) {
       canEdit = true;
     }
     if (!canEdit) {
@@ -909,8 +909,8 @@ exports.updateProject = async (req, res) => {
           { strict: false }
         );
 
-        const warehouseUsers = await User.find({ roles: 'warehouse', status: 'approved' });
-        const notificationPromises = warehouseUsers.map(u => new Notification({
+        const warehouseInUsers = await User.find({ roles: 'warehouse_in', status: 'approved' });
+        const notificationPromises = warehouseInUsers.map(u => new Notification({
           toUserId: u._id,
           type: 'project_ready_for_warehousein',
           title: '新项目待入库',
@@ -918,7 +918,7 @@ exports.updateProject = async (req, res) => {
           projectId: project._id
         }).save());
         await Promise.all(notificationPromises);
-        console.log(`已为 ${warehouseUsers.length} 名库管创建入库通知`);
+        console.log(`已为 ${warehouseInUsers.length} 名入库管理员创建入库通知`);
       } catch (e) {
         console.error('创建入库通知失败:', e);
       }
@@ -933,8 +933,8 @@ exports.updateProject = async (req, res) => {
           { strict: false }
         );
 
-        const warehouseUsers = await User.find({ roles: 'warehouse', status: 'approved' });
-        const notificationPromises = warehouseUsers.map(u => new Notification({
+        const warehouseOutUsers = await User.find({ roles: 'warehouse_out', status: 'approved' });
+        const notificationPromises = warehouseOutUsers.map(u => new Notification({
           toUserId: u._id,
           type: 'project_ready_for_warehouseout',
           title: '新项目待出库',
@@ -942,7 +942,7 @@ exports.updateProject = async (req, res) => {
           projectId: project._id
         }).save());
         await Promise.all(notificationPromises);
-        console.log(`已为 ${warehouseUsers.length} 名库管创建第一次出库通知`);
+        console.log(`已为 ${warehouseOutUsers.length} 名出库管理员创建第一次出库通知`);
       } catch (e) {
         console.error('创建第一次出库通知失败:', e);
       }
@@ -1005,8 +1005,8 @@ exports.updateProject = async (req, res) => {
           { strict: false }
         );
 
-        const warehouseUsers = await User.find({ roles: 'warehouse', status: 'approved' });
-        const notificationPromises = warehouseUsers.map(u => new Notification({
+        const warehouseInUsers = await User.find({ roles: 'warehouse_in', status: 'approved' });
+        const notificationPromises = warehouseInUsers.map(u => new Notification({
           toUserId: u._id,
           type: 'project_ready_for_warehousein_second',
           title: '新项目待入库（整机）',
@@ -1014,7 +1014,7 @@ exports.updateProject = async (req, res) => {
           projectId: project._id
         }).save());
         await Promise.all(notificationPromises);
-        console.log(`已为 ${warehouseUsers.length} 名库管创建第二次入库通知`);
+        console.log(`已为 ${warehouseInUsers.length} 名入库管理员创建第二次入库通知`);
       } catch (e) {
         console.error('创建第二次入库通知失败:', e);
       }
@@ -1029,8 +1029,8 @@ exports.updateProject = async (req, res) => {
           { strict: false }
         );
 
-        const warehouseUsers = await User.find({ roles: 'warehouse', status: 'approved' });
-        const notificationPromises = warehouseUsers.map(u => new Notification({
+        const warehouseOutUsers = await User.find({ roles: 'warehouse_out', status: 'approved' });
+        const notificationPromises = warehouseOutUsers.map(u => new Notification({
           toUserId: u._id,
           type: 'project_ready_for_warehouseout_second',
           title: '新项目待出库（整机确认）',
@@ -1038,7 +1038,7 @@ exports.updateProject = async (req, res) => {
           projectId: project._id
         }).save());
         await Promise.all(notificationPromises);
-        console.log(`已为 ${warehouseUsers.length} 名库管创建第二次出库通知`);
+        console.log(`已为 ${warehouseOutUsers.length} 名出库管理员创建第二次出库通知`);
       } catch (e) {
         console.error('创建第二次出库通知失败:', e);
       }

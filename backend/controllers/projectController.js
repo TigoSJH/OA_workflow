@@ -417,7 +417,8 @@ exports.updateProject = async (req, res) => {
         !req.user.roles.includes('processor') &&
         !req.user.roles.includes('assembler') &&
         !req.user.roles.includes('tester') &&
-        !req.user.roles.includes('warehouse')) {
+        !req.user.roles.includes('warehouse_in') &&
+        !req.user.roles.includes('warehouse_out')) {
       return res.status(403).json({ error: '没有权限修改此项目' });
     }
     

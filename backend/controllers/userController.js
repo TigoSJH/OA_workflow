@@ -335,7 +335,7 @@ exports.setPrimaryLeader = async (req, res) => {
     }
     
     // 验证角色是否有效
-    const validRoles = ['manager', 'researcher', 'engineer', 'purchaser', 'processor', 'assembler', 'tester', 'warehouse'];
+    const validRoles = ['manager', 'researcher', 'engineer', 'purchaser', 'processor', 'assembler', 'tester', 'warehouse_in', 'warehouse_out'];
     const invalidRoles = roles.filter(role => !validRoles.includes(role));
     
     if (invalidRoles.length > 0) {
@@ -443,6 +443,17 @@ exports.getPrimaryLeaders = async (req, res) => {
   } catch (error) {
     console.error('获取主负责人列表错误:', error);
     res.status(500).json({ error: '获取主负责人列表失败' });
+  }
+};
+
+// 获取可分配角色列表
+exports.getAssignableRoles = async (req, res) => {
+  try {
+    const validRoles = ['manager', 'researcher', 'engineer', 'purchaser', 'processor', 'assembler', 'tester', 'warehouse_in', 'warehouse_out'];
+    res.json({ roles: validRoles });
+  } catch (error) {
+    console.error('获取可分配角色列表失败:', error);
+    res.status(500).json({ error: '获取可分配角色列表失败' });
   }
 };
 

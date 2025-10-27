@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema({
   },
   roles: [{
     type: String,
-    enum: ['admin', 'manager', 'researcher', 'engineer', 'purchaser', 'processor', 'assembler', 'tester', 'warehouse'],
+    enum: ['admin', 'manager', 'researcher', 'engineer', 'purchaser', 'processor', 'assembler', 'tester', 'warehouse_in', 'warehouse_out'],
     default: []
   }],
   isPrimaryLeader: {
@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema({
   },
   primaryLeaderRoles: [{
     type: String,
-    enum: ['manager', 'researcher', 'engineer', 'purchaser', 'processor', 'assembler', 'tester', 'warehouse'],
+    enum: ['manager', 'researcher', 'engineer', 'purchaser', 'processor', 'assembler', 'tester', 'warehouse_in', 'warehouse_out'],
     default: []
   }],
   status: {

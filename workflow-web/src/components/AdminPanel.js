@@ -82,7 +82,7 @@ const AdminPanel = ({ user, onLogout, activeRole, onRoleSwitch }) => {
     const loadEngineers = async () => {
       try {
         const response = await userAPI.getUsers({ status: 'approved' });
-        const workerRoles = new Set(['operator', 'assembler', 'tester', 'purchaser', 'processor', 'assembler', 'tester', 'warehouse', 'engineer']);
+        const workerRoles = new Set(['operator', 'assembler', 'tester', 'purchaser', 'processor', 'warehouse_in', 'warehouse_out', 'engineer']);
         const list = (response.users || [])
           .filter(u => Array.isArray(u.roles) && u.roles.some(r => workerRoles.has(r)))
           .map(u => ({ id: u.username, name: `${u.displayName || u.username} - ${u.roles.join('/')}`, role: u.roles[0] || '' }));
@@ -173,7 +173,8 @@ const AdminPanel = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                             processor: '加工',
                             assembler: '装配',
                             tester: '调试',
-                            warehouse: '入库出库'
+                            warehouse_in: '入库管理',
+                            warehouse_out: '出库管理'
                           };
                           return roleMap[role] || role;
                         }).join('、')}
@@ -201,7 +202,7 @@ const AdminPanel = ({ user, onLogout, activeRole, onRoleSwitch }) => {
 
           <div className="section-card">
             <h3 className="section-title">设置主负责人（按岗位）</h3>
-            {['manager', 'researcher', 'engineer', 'purchaser', 'processor', 'assembler', 'tester', 'warehouse'].map(targetRole => {
+            {['manager', 'researcher', 'engineer', 'purchaser', 'processor', 'assembler', 'tester', 'warehouse_in', 'warehouse_out'].map(targetRole => {
               const roleMap = {
                 manager: '项目管理',
                 researcher: '研发',
@@ -210,7 +211,8 @@ const AdminPanel = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                 processor: '加工',
                 assembler: '装配',
                 tester: '调试',
-                warehouse: '入库出库'
+                warehouse_in: '入库管理',
+                warehouse_out: '出库管理'
               };
               
               const roleUsers = users.filter(u => u.roles && u.roles.includes(targetRole));

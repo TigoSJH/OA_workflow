@@ -155,7 +155,7 @@ function App() {
     } catch (e) {}
     setUser(userData);
     
-    // 设置默认激活角色（优先级：admin > manager > researcher > engineer > warehouse）
+    // 设置默认激活角色（优先级：admin > manager > researcher > engineer > warehouse_in > warehouse_out）
     if (userData.roles && userData.roles.length > 0) {
       if (userData.roles.includes('admin')) {
         setActiveRole('admin');
@@ -165,8 +165,10 @@ function App() {
         setActiveRole('researcher_initiation');
       } else if (userData.roles.includes('engineer')) {
         setActiveRole('engineer');
-      } else if (userData.roles.includes('warehouse')) {
-        setActiveRole('warehouse_in'); // 库管默认显示入库页面
+      } else if (userData.roles.includes('warehouse_in')) {
+        setActiveRole('warehouse_in'); // 入库管理员默认显示入库页面
+      } else if (userData.roles.includes('warehouse_out')) {
+        setActiveRole('warehouse_out'); // 出库管理员默认显示出库页面
       } else {
         setActiveRole(userData.roles[0]);
       }

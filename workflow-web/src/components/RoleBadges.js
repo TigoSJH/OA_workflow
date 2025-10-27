@@ -16,10 +16,8 @@ const RoleBadges = ({ user, activeRole, onRoleSwitch }) => {
     'processor': { name: '加工', pageRole: 'processor' },
     'assembler': { name: '装配', pageRole: 'assembler' },
     'tester': { name: '调试', pageRole: 'tester' },
-    'warehouse': [
-      { name: '入库', pageRole: 'warehouse_in' },
-      { name: '出库', pageRole: 'warehouse_out' }
-    ]
+    'warehouse_in': { name: '入库', pageRole: 'warehouse_in' },
+    'warehouse_out': { name: '出库', pageRole: 'warehouse_out' }
   };
 
   // 生成可切换的角色列表
@@ -28,12 +26,7 @@ const RoleBadges = ({ user, activeRole, onRoleSwitch }) => {
   user.roles.forEach(role => {
     const mapping = roleMapping[role];
     if (mapping) {
-      // 如果是数组（如 warehouse），展开添加
-      if (Array.isArray(mapping)) {
-        availableRoles.push(...mapping);
-      } else {
-        availableRoles.push(mapping);
-      }
+      availableRoles.push(mapping);
     }
   });
 

@@ -20,7 +20,8 @@ const UserManagement = ({ user, onBack }) => {
     { value: 'processor', label: '加工人员', icon: '⚒️' },
     { value: 'assembler', label: '装配工', icon: '🔧' },
     { value: 'tester', label: '调试人员', icon: '🧪' },
-    { value: 'warehouse', label: '库管人员', icon: '📦' },
+    { value: 'warehouse_in', label: '入库管理员', icon: '📥' },
+    { value: 'warehouse_out', label: '出库管理员', icon: '📤' },
   ];
 
   useEffect(() => {
