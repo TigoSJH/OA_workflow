@@ -199,33 +199,33 @@ const WarehouseOutSecond = ({ user, onLogout, activeRole, onRoleSwitch, onSwitch
         <h1 className="page-title">🏭 第二次出库（整机出库）</h1>
 
         {/* 统计卡片 */}
-        <div className="stats-grid">
-          <div className="stat-card stat-pending">
+        <div className="stats-container">
+          <div className="stat-card highlight">
             <div className="stat-icon">⏳</div>
             <div className="stat-content">
-              <div className="stat-number">{stats.pending}</div>
+              <div className="stat-value">{stats.pending}</div>
               <div className="stat-label">待整机出库</div>
             </div>
           </div>
-          <div className="stat-card stat-completed">
+          <div className="stat-card success">
             <div className="stat-icon">✅</div>
             <div className="stat-content">
-              <div className="stat-number">{stats.completed}</div>
+              <div className="stat-value">{stats.completed}</div>
               <div className="stat-label">整机出库完成</div>
             </div>
           </div>
         </div>
 
         {/* Tab 切换 */}
-        <div className="tabs">
+        <div className="tabs-container">
           <button 
-            className={`tab ${activeTab === 'pending' ? 'active' : ''}`}
+            className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
             onClick={() => setActiveTab('pending')}
           >
             ⏳ 待整机出库 ({stats.pending})
           </button>
           <button 
-            className={`tab ${activeTab === 'completed' ? 'active' : ''}`}
+            className={`tab-btn ${activeTab === 'completed' ? 'active' : ''}`}
             onClick={() => setActiveTab('completed')}
           >
             ✅ 整机出库完成 ({stats.completed})
