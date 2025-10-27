@@ -671,15 +671,15 @@ exports.setProjectTimelines = async (req, res) => {
     
     await project.save();
     
-    // 发送通知给相关角色（研发、工程等）
+    // 发送通知给研发人员（项目下发时只通知第一阶段负责人）
     try {
       const Notification = require('../models/Notification');
       const User = require('../models/User');
       
-      // 定义需要通知的角色
-      const rolesToNotify = ['researcher', 'engineer', 'purchaser', 'processor', 'assembler', 'tester', 'warehouse'];
+      // 只通知研发人员，后续阶段会在前一阶段完成时自动通知
+      const rolesToNotify = ['researcher'];
       
-      // 获取所有相关角色的用户
+      // 获取所有研发人员
       const usersToNotify = await User.find({
         roles: { $in: rolesToNotify },
         status: 'approved'
@@ -691,14 +691,14 @@ exports.setProjectTimelines = async (req, res) => {
           toUserId: notifyUser._id,
           type: 'project_assigned',
           title: '新项目已下发',
-          message: `项目"${project.projectName}"已完成时间安排并下发，请及时处理`,
+          message: `项目"${project.projectName}"已完成时间安排并下发，请及时完成研发工作`,
           projectId: String(project._id),
-          requiresAction: false
+          requiresAction: true
         }).save();
       });
       
       await Promise.all(notifications);
-      console.log(`已为 ${usersToNotify.length} 个用户发送项目下发通知`);
+      console.log(`已为 ${usersToNotify.length} 名研发人员发送项目下发通知`);
     } catch (notifError) {
       console.error('发送项目下发通知失败:', notifError);
       // 不影响主流程，继续执行

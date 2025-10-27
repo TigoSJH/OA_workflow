@@ -662,29 +662,8 @@ exports.approveProject = async (req, res) => {
           // 不影响主流程，继续执行
         }
         
-        // 为所有研发人员创建通知
-        try {
-          const researchers = await User.find({ 
-            roles: 'researcher',
-            status: 'approved'
-          });
-          
-          const notificationPromises = researchers.map(researcher => {
-            return new Notification({
-              toUserId: researcher._id,
-              type: 'project_started',
-              title: '项目启动通知',
-              message: `${approvedProject.projectName} 项目已启动，请及时完成设计`,
-              projectId: approvedProject._id
-            }).save();
-          });
-          
-          await Promise.all(notificationPromises);
-          console.log(`已为 ${researchers.length} 名研发人员创建项目启动通知`);
-        } catch (notifError) {
-          console.error('创建研发人员通知失败:', notifError);
-          // 不影响主流程，继续执行
-        }
+        // 注意：不在此处通知研发人员，而是等主负责人设置完时间周期后再通知
+        // 避免研发人员收到通知但看不到项目的问题
         
         res.json({
           message: '项目已获得全部批准并转移到已批准项目列表',
