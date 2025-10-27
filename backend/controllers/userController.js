@@ -184,13 +184,15 @@ exports.approveUser = async (req, res) => {
     }
     
     if (user.status === 'approved') {
-      return res.status(400).json({ error: '用户已经是批准状态' });
+      // 对于已批准用户，仅更新角色
+      user.roles = roles;
+    } else {
+      // 对于待审批用户，更新状态和角色
+      user.status = 'approved';
+      user.roles = roles;
+      user.approver = req.user.username;
+      user.approveTime = new Date();
     }
-    
-    user.status = 'approved';
-    user.roles = roles;
-    user.approver = req.user.username;
-    user.approveTime = new Date();
     
     await user.save();
     
