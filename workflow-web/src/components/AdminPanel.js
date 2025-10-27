@@ -260,7 +260,7 @@ const AdminPanel = ({ user, onLogout, activeRole, onRoleSwitch }) => {
       {loading && (
         <div className="loading-overlay">
           <div className="loading-spinner">
-            <img src="/images/loading.png" alt="loading" className="loading-image" />
+            <img src="/loading.png" alt="loading" className="loading-image" />
             <p>更新数据中...</p>
           </div>
         </div>

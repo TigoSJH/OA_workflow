@@ -253,7 +253,7 @@ const ProjectDevelopment = ({ user, onLogout, onSwitchToInitiation, activeRole, 
         <div className="project-list">
           {loading ? (
             <div className="loading-state">
-              <img src="/images/loading.png" alt="loading" className="loading-image" />
+              <img src="/loading.png" alt="loading" className="loading-image" />
               <p>加载中...</p>
             </div>
           ) : filteredProjects.length > 0 ? (

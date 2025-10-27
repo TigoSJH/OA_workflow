@@ -554,7 +554,7 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
         <div className="loading-overlay">
           <div className="loading-spinner">
             <img
-              src="/images/loading.png"
+              src="/loading.png"
               alt="loading"
               className="loading-image"
             />
