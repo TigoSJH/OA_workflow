@@ -18,7 +18,7 @@ const ProjectScheduleManagement = ({ user, onLogout, onBackToHome, onProjectSele
       const response = await apiService.get('/projects');
       
       // 只显示已批准的项目
-      const approvedProjects = response.projects.filter(p => p.category === 'approved');
+      const approvedProjects = response.projects.filter(p => p.status === 'approved');
       setProjects(approvedProjects);
     } catch (error) {
       console.error('加载项目失败:', error);
