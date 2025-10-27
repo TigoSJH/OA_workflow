@@ -166,13 +166,17 @@ const WarehouseOutFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchT
       {/* 顶部导航栏 */}
       <div className="warehouse-out-header">
         <div className="header-left">
-          <div className="user-avatar">👤</div>
-          <div className="user-name">{user.displayName || user.username}</div>
-          <RoleBadges 
-            user={user} 
-            activeRole={activeRole} 
-            onRoleSwitch={onRoleSwitch} 
-          />
+          <div className="user-info">
+            <div className="user-avatar">📤</div>
+            <div className="user-details">
+              <div className="user-name">{user.displayName || user.username}</div>
+              <RoleBadges 
+                user={user} 
+                activeRole={activeRole} 
+                onRoleSwitch={onRoleSwitch} 
+              />
+            </div>
+          </div>
         </div>
         <div className="header-right">
           <button className="switch-page-btn" onClick={onSwitchToSecond}>
