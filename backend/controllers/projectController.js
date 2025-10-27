@@ -613,18 +613,32 @@ exports.setProjectTimelines = async (req, res) => {
     console.log('验证条件3 - 包含manager:', user.primaryLeaderRoles ? !user.primaryLeaderRoles.includes('manager') : 'N/A');
     console.log('=======================');
     
-    if (!user.isPrimaryLeader || !user.primaryLeaderRoles || !user.primaryLeaderRoles.includes('manager')) {
+    // 允许以下任一条件通过：
+    // 1) 是主负责人，且主负责人角色包含 manager
+    // 2) 具有系统管理员(admin)角色
+    // 3) 具有管理人员(manager)常规角色（向后兼容，避免误配导致无法设置）
+    const isPrimaryManager = !!(user.isPrimaryLeader && Array.isArray(user.primaryLeaderRoles) && user.primaryLeaderRoles.includes('manager'));
+    const isAdmin = Array.isArray(user.roles) && user.roles.includes('admin');
+    const isManager = Array.isArray(user.roles) && user.roles.includes('manager');
+
+    if (!(isPrimaryManager || isAdmin || isManager)) {
       console.error('❌ 权限验证失败:', {
         isPrimaryLeader: user.isPrimaryLeader,
         primaryLeaderRoles: user.primaryLeaderRoles,
-        hasManager: user.primaryLeaderRoles ? user.primaryLeaderRoles.includes('manager') : false
+        hasPrimaryManager: isPrimaryManager,
+        roles: user.roles,
+        isAdmin,
+        isManager
       });
       return res.status(403).json({ 
-        error: '只有项目管理主负责人可以设置时间周期',
+        error: '当前账号无权限设置时间周期（需主负责人/管理员/管理人员）',
         debug: {
           isPrimaryLeader: user.isPrimaryLeader,
           primaryLeaderRoles: user.primaryLeaderRoles,
-          roles: user.roles
+          roles: user.roles,
+          isPrimaryManager,
+          isAdmin,
+          isManager
         }
       });
     }
