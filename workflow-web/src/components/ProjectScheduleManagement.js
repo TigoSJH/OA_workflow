@@ -95,13 +95,6 @@ const ProjectScheduleManagement = ({ user, onLogout, onBackToHome, onProjectSele
               <div className="stat-label">已安排</div>
             </div>
           </div>
-          <div className="stat-card stat-completed">
-            <div className="stat-icon">✅</div>
-            <div className="stat-content">
-              <div className="stat-number">{stats.completed}</div>
-              <div className="stat-label">已完成</div>
-            </div>
-          </div>
         </div>
 
         {/* Tab 切换 */}
@@ -117,12 +110,6 @@ const ProjectScheduleManagement = ({ user, onLogout, onBackToHome, onProjectSele
             onClick={() => setActiveTab('scheduled')}
           >
             📅 已安排 ({stats.scheduled})
-          </button>
-          <button 
-            className={`tab ${activeTab === 'completed' ? 'active' : ''}`}
-            onClick={() => setActiveTab('completed')}
-          >
-            ✅ 已完成 ({stats.completed})
           </button>
         </div>
 
