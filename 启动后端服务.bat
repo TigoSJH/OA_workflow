@@ -60,7 +60,5 @@ echo    - 查看后端状态: pm2 status
 echo    - 查看后端日志: pm2 logs oa-backend
 echo    - 停止所有服务: 运行"停止后端服务.bat"
 echo.
-echo 按任意键关闭此窗口...
-pause >nul
 
 

@@ -171,32 +171,32 @@ const WarehouseInSecond = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchT
 
       {/* 顶部导航栏 */}
       <div className="warehouse-in-header">
-        <div className="header-left">
-          <div className="user-info">
-            <div className="user-avatar">🏭</div>
-            <div className="user-details">
-              <div className="user-name">{user.displayName || user.username}</div>
-              <RoleBadges 
-                user={user} 
-                activeRole={activeRole} 
-                onRoleSwitch={onRoleSwitch} 
-              />
-            </div>
+        <div className="user-info-section">
+          <div className="user-avatar">🏭</div>
+          <div className="user-details">
+            <div className="user-name">{user.displayName || user.username}</div>
+            <RoleBadges 
+              user={user} 
+              activeRole={activeRole} 
+              onRoleSwitch={onRoleSwitch} 
+            />
           </div>
         </div>
-        <div className="header-right">
-          <button className="switch-page-btn" onClick={onSwitchToFirst}>
-            📦 切换到第一次入库
+        <div className="header-actions">
+          <button className="action-btn switch-btn" onClick={onSwitchToFirst}>
+            <span className="btn-icon">📦</span>
+            <span className="btn-text">第一次入库</span>
           </button>
-          <button className="logout-btn" onClick={onLogout}>
-            🚪 退出登录
+          <button className="action-btn logout-btn" onClick={onLogout}>
+            <span className="btn-icon">🚪</span>
+            <span className="btn-text">退出登录</span>
           </button>
         </div>
       </div>
 
       {/* 主内容区 */}
       <div className="warehouse-in-content">
-        <h1 className="page-title">🏭 第二次入库（整机入库）</h1>
+        <h1 className="page-title">入库管理（整机入库）</h1>
 
         {/* 统计卡片 */}
         <div className="stats-container">
