@@ -341,60 +341,55 @@ export const taskAPI = {
 
 // 文件相关API
 export const fileAPI = {
-  // 上传文件
-  uploadFile: async (file, projectId = null, taskId = null, fileCategory = 'other', description = '') => {
+  // 上传单个文件到文件系统
+  uploadFile: async (file, projectId, projectName, stage = 'other') => {
     const api = new ApiService();
     const formData = new FormData();
     formData.append('file', file);
-    if (projectId) formData.append('projectId', projectId);
-    if (taskId) formData.append('taskId', taskId);
-    formData.append('fileCategory', fileCategory);
-    formData.append('description', description);
+    formData.append('projectId', projectId);
+    formData.append('projectName', projectName);
+    formData.append('stage', stage);
     
     return api.uploadFile('/files/upload', formData);
   },
 
-  // 批量上传文件
-  uploadMultipleFiles: async (files, projectId = null, taskId = null, fileCategory = 'other', description = '') => {
+  // 批量上传文件到文件系统
+  uploadMultipleFiles: async (files, projectId, projectName, stage = 'other') => {
     const api = new ApiService();
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
-    if (projectId) formData.append('projectId', projectId);
-    if (taskId) formData.append('taskId', taskId);
-    formData.append('fileCategory', fileCategory);
-    formData.append('description', description);
+    formData.append('projectId', projectId);
+    formData.append('projectName', projectName);
+    formData.append('stage', stage);
     
     return api.uploadFile('/files/upload-multiple', formData);
   },
 
-  // 获取文件列表
-  getFiles: async (params = {}) => {
+  // 获取项目文件列表
+  getProjectFiles: async (stage, projectId) => {
     const api = new ApiService();
-    return api.get('/files', params);
-  },
-
-  // 获取文件详情
-  getFile: async (fileId) => {
-    const api = new ApiService();
-    return api.get(`/files/${fileId}`);
+    return api.get(`/files/list/${stage}/${projectId}`);
   },
 
   // 下载文件
-  downloadFile: async (fileId) => {
+  downloadFile: async (stage, projectId, filename) => {
     const api = new ApiService();
-    return api.downloadFile(`/files/${fileId}/download`);
+    const baseURL = api.baseURL.replace('/api', '');
+    const url = `${baseURL}/api/files/download/${stage}/${projectId}/${filename}`;
+    window.open(url, '_blank');
+  },
+
+  // 查看/预览文件
+  viewFile: (stage, projectId, filename) => {
+    const api = new ApiService();
+    const baseURL = api.baseURL.replace('/api', '');
+    return `${baseURL}/api/files/view/${stage}/${projectId}/${filename}`;
   },
 
   // 删除文件
-  deleteFile: async (fileId) => {
+  deleteFile: async (stage, projectId, filename) => {
     const api = new ApiService();
-    return api.delete(`/files/${fileId}`);
-  },
-
-  // 更新文件信息
-  updateFile: async (fileId, updateData) => {
-    const api = new ApiService();
-    return api.put(`/files/${fileId}`, updateData);
+    return api.delete(`/files/${stage}/${projectId}/${filename}`);
   }
 };
 

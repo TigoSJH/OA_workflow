@@ -30,6 +30,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/projects', require('./routes/newProjects')); // 使用新的项目路由
 app.use('/api/old-projects', require('./routes/projects')); // 保留旧路由作为备份
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/files', require('./routes/files')); // 文件上传下载路由
 // app.use('/api/tasks', require('./routes/tasks'));
 
 // 错误处理中间件

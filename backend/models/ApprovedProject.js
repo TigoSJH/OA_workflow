@@ -100,16 +100,37 @@ const approvedProjectSchema = new mongoose.Schema({
   
   // 研发开发阶段
   developmentFiles: [{
+    name: String,           // 原始文件名
+    filename: String,       // 存储的文件名
+    path: String,           // 完整路径
+    relativePath: String,   // 相对路径（用于前端访问）
+    size: String,           // 文件大小
+    mimetype: String,       // MIME类型
+    uploadTime: Date,       // 上传时间
+    uploadBy: String        // 上传人
+  }],
+  // 项目文件夹截图（文件系统存储）
+  folderScreenshots: [{
     name: String,
+    filename: String,
+    path: String,
+    relativePath: String,
     size: String,
-    type: String,
+    mimetype: String,
     uploadTime: Date,
     uploadBy: String
   }],
-  // 项目文件夹截图（允许任意对象，避免类型转换报错）
-  folderScreenshots: [mongoose.Schema.Types.Mixed],
-  // 图纸图片（允许任意对象）
-  drawingImages: [mongoose.Schema.Types.Mixed],
+  // 图纸图片（文件系统存储）
+  drawingImages: [{
+    name: String,
+    filename: String,
+    path: String,
+    relativePath: String,
+    size: String,
+    mimetype: String,
+    uploadTime: Date,
+    uploadBy: String
+  }],
   
   // 团队成员上传的图纸（普通研发人员）
   teamMemberUploads: [{
@@ -180,8 +201,26 @@ const approvedProjectSchema = new mongoose.Schema({
   },
   
   // 工程阶段
-  engineeringDrawings: [mongoose.Schema.Types.Mixed], // 工程图纸
-  engineeringDocuments: [mongoose.Schema.Types.Mixed], // 工程文档
+  engineeringDrawings: [{
+    name: String,
+    filename: String,
+    path: String,
+    relativePath: String,
+    size: String,
+    mimetype: String,
+    uploadTime: Date,
+    uploadBy: String
+  }],
+  engineeringDocuments: [{
+    name: String,
+    filename: String,
+    path: String,
+    relativePath: String,
+    size: String,
+    mimetype: String,
+    uploadTime: Date,
+    uploadBy: String
+  }],
   engineeringCompleted: {
     type: Boolean,
     default: false
@@ -204,14 +243,26 @@ const approvedProjectSchema = new mongoose.Schema({
   purchaseCompletedBy: {
     type: String
   },
-  purchaseDocuments: {
-    type: Array,
-    default: []
-  },
-  invoiceDocuments: {
-    type: Array,
-    default: []
-  },
+  purchaseDocuments: [{
+    name: String,
+    filename: String,
+    path: String,
+    relativePath: String,
+    size: String,
+    mimetype: String,
+    uploadTime: Date,
+    uploadBy: String
+  }],
+  invoiceDocuments: [{
+    name: String,
+    filename: String,
+    path: String,
+    relativePath: String,
+    size: String,
+    mimetype: String,
+    uploadTime: Date,
+    uploadBy: String
+  }],
   
   // 加工阶段相关
   processingCompleted: {
@@ -224,10 +275,16 @@ const approvedProjectSchema = new mongoose.Schema({
   processingCompletedBy: {
     type: String
   },
-  processingImages: {
-    type: Array,
-    default: []
-  },
+  processingImages: [{
+    name: String,
+    filename: String,
+    path: String,
+    relativePath: String,
+    size: String,
+    mimetype: String,
+    uploadTime: Date,
+    uploadBy: String
+  }],
   
   // 装配阶段相关
   assemblyCompleted: {
@@ -240,10 +297,16 @@ const approvedProjectSchema = new mongoose.Schema({
   assemblyCompletedBy: {
     type: String
   },
-  assemblyImages: {
-    type: Array,
-    default: []
-  },
+  assemblyImages: [{
+    name: String,
+    filename: String,
+    path: String,
+    relativePath: String,
+    size: String,
+    mimetype: String,
+    uploadTime: Date,
+    uploadBy: String
+  }],
 
   // 调试阶段相关
   testingCompleted: {
