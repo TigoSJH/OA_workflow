@@ -132,10 +132,18 @@ exports.getApprovedProjects = async (req, res) => {
         warehouseInCompleted: project.warehouseInCompleted,
         warehouseInCompletedTime: project.warehouseInCompletedTime,
         warehouseInCompletedBy: usernameToDisplayName.get(project.warehouseInCompletedBy) || project.warehouseInCompletedBy,
-        // 出库阶段
+        // 第二次入库阶段（整机）
+        warehouseInSecondCompleted: project.warehouseInSecondCompleted,
+        warehouseInSecondCompletedTime: project.warehouseInSecondCompletedTime,
+        warehouseInSecondCompletedBy: usernameToDisplayName.get(project.warehouseInSecondCompletedBy) || project.warehouseInSecondCompletedBy,
+        // 出库阶段（第一次）
         warehouseOutCompleted: project.warehouseOutCompleted,
         warehouseOutCompletedTime: project.warehouseOutCompletedTime,
         warehouseOutCompletedBy: usernameToDisplayName.get(project.warehouseOutCompletedBy) || project.warehouseOutCompletedBy,
+        // 第二次出库阶段（整机确认）
+        warehouseOutSecondCompleted: project.warehouseOutSecondCompleted,
+        warehouseOutSecondCompletedTime: project.warehouseOutSecondCompletedTime,
+        warehouseOutSecondCompletedBy: usernameToDisplayName.get(project.warehouseOutSecondCompletedBy) || project.warehouseOutSecondCompletedBy,
         // 归档阶段
         archived: project.archived,
         archivedTime: project.archivedTime,
@@ -261,10 +269,18 @@ exports.getProjectById = async (req, res) => {
       warehouseInCompleted: project.warehouseInCompleted,
       warehouseInCompletedTime: project.warehouseInCompletedTime,
       warehouseInCompletedBy: usernameToDisplayName.get(project.warehouseInCompletedBy) || project.warehouseInCompletedBy,
-      // 出库阶段
+      // 第二次入库阶段（整机）
+      warehouseInSecondCompleted: project.warehouseInSecondCompleted,
+      warehouseInSecondCompletedTime: project.warehouseInSecondCompletedTime,
+      warehouseInSecondCompletedBy: usernameToDisplayName.get(project.warehouseInSecondCompletedBy) || project.warehouseInSecondCompletedBy,
+      // 出库阶段（第一次）
       warehouseOutCompleted: project.warehouseOutCompleted,
       warehouseOutCompletedTime: project.warehouseOutCompletedTime,
       warehouseOutCompletedBy: usernameToDisplayName.get(project.warehouseOutCompletedBy) || project.warehouseOutCompletedBy,
+      // 第二次出库阶段（整机确认）
+      warehouseOutSecondCompleted: project.warehouseOutSecondCompleted,
+      warehouseOutSecondCompletedTime: project.warehouseOutSecondCompletedTime,
+      warehouseOutSecondCompletedBy: usernameToDisplayName.get(project.warehouseOutSecondCompletedBy) || project.warehouseOutSecondCompletedBy,
       // 归档阶段
       archived: project.archived,
       archivedTime: project.archivedTime,
@@ -403,14 +419,22 @@ exports.getAllProjects = async (req, res) => {
         testingCompleted: project.testingCompleted,
         testingCompletedTime: project.testingCompletedTime,
         testingCompletedBy: usernameToDisplayName.get(project.testingCompletedBy) || project.testingCompletedBy,
-        // 入库阶段
+        // 入库阶段（第一次）
         warehouseInCompleted: project.warehouseInCompleted,
         warehouseInCompletedTime: project.warehouseInCompletedTime,
         warehouseInCompletedBy: usernameToDisplayName.get(project.warehouseInCompletedBy) || project.warehouseInCompletedBy,
-        // 出库阶段
+        // 第二次入库阶段（整机）
+        warehouseInSecondCompleted: project.warehouseInSecondCompleted,
+        warehouseInSecondCompletedTime: project.warehouseInSecondCompletedTime,
+        warehouseInSecondCompletedBy: usernameToDisplayName.get(project.warehouseInSecondCompletedBy) || project.warehouseInSecondCompletedBy,
+        // 出库阶段（第一次）
         warehouseOutCompleted: project.warehouseOutCompleted,
         warehouseOutCompletedTime: project.warehouseOutCompletedTime,
         warehouseOutCompletedBy: usernameToDisplayName.get(project.warehouseOutCompletedBy) || project.warehouseOutCompletedBy,
+        // 第二次出库阶段（整机确认）
+        warehouseOutSecondCompleted: project.warehouseOutSecondCompleted,
+        warehouseOutSecondCompletedTime: project.warehouseOutSecondCompletedTime,
+        warehouseOutSecondCompletedBy: usernameToDisplayName.get(project.warehouseOutSecondCompletedBy) || project.warehouseOutSecondCompletedBy,
         // 归档阶段
         archived: project.archived,
         archivedTime: project.archivedTime,

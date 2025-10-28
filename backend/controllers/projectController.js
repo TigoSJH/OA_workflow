@@ -399,10 +399,19 @@ exports.updateProject = async (req, res) => {
       archived,
       archivedTime,
       archivedBy,
-      archiveSummary
+      archiveSummary,
+      // 第二次入库
+      warehouseInSecondCompleted,
+      warehouseInSecondCompletedTime,
+      warehouseInSecondCompletedBy,
+      // 第二次出库
+      warehouseOutSecondCompleted,
+      warehouseOutSecondCompletedTime,
+      warehouseOutSecondCompletedBy
     } = req.body;
     
-    const project = await Project.findById(req.params.id);
+    const ApprovedProject = require('../models/ApprovedProject');
+    const project = await ApprovedProject.findById(req.params.id);
     
     if (!project) {
       return res.status(404).json({ error: '项目不存在' });
@@ -474,11 +483,21 @@ exports.updateProject = async (req, res) => {
     if (warehouseInCompletedTime !== undefined) project.warehouseInCompletedTime = warehouseInCompletedTime;
     if (warehouseInCompletedBy !== undefined) project.warehouseInCompletedBy = warehouseInCompletedBy;
     
+    // 第二次入库阶段字段
+    if (warehouseInSecondCompleted !== undefined) project.warehouseInSecondCompleted = warehouseInSecondCompleted;
+    if (warehouseInSecondCompletedTime !== undefined) project.warehouseInSecondCompletedTime = warehouseInSecondCompletedTime;
+    if (warehouseInSecondCompletedBy !== undefined) project.warehouseInSecondCompletedBy = warehouseInSecondCompletedBy;
+
     // 出库阶段字段
     if (warehouseOutCompleted !== undefined) project.warehouseOutCompleted = warehouseOutCompleted;
     if (warehouseOutCompletedTime !== undefined) project.warehouseOutCompletedTime = warehouseOutCompletedTime;
     if (warehouseOutCompletedBy !== undefined) project.warehouseOutCompletedBy = warehouseOutCompletedBy;
     
+    // 第二次出库阶段字段
+    if (warehouseOutSecondCompleted !== undefined) project.warehouseOutSecondCompleted = warehouseOutSecondCompleted;
+    if (warehouseOutSecondCompletedTime !== undefined) project.warehouseOutSecondCompletedTime = warehouseOutSecondCompletedTime;
+    if (warehouseOutSecondCompletedBy !== undefined) project.warehouseOutSecondCompletedBy = warehouseOutSecondCompletedBy;
+
     // 归档阶段字段
     if (archived !== undefined) project.archived = archived;
     if (archivedTime !== undefined) project.archivedTime = archivedTime;
@@ -494,8 +513,10 @@ exports.updateProject = async (req, res) => {
 
     // 如果完成了出库，则给管理主负责人发送归档提醒
     try {
+      const completedSecondWarehouseOut = warehouseOutSecondCompleted === true || project.warehouseOutSecondCompleted === true;
       const completedWarehouseOut = warehouseOutCompleted === true || project.warehouseOutCompleted === true;
-      if (completedWarehouseOut) {
+      
+      if (completedWarehouseOut || completedSecondWarehouseOut) {
         const Notification = require('../models/Notification');
         const User = require('../models/User');
         const managers = await User.find({
