@@ -116,16 +116,15 @@ app.post('/api/files/upload-multiple', auth, function(req, res, next) {
 });
 
 // 文件预览路由
-app.get('/api/files/view/:stage/:projectId/:filename', (req, res) => {
+app.get('/api/files/view/:stage/:projectId/:filename', auth, (req, res) => {
   try {
     const { stage, projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
     
-    // 生成文件夹名称（与上传时保持一致）
-    const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim();
-    const folderName = safeName ? `${projectId}_${safeName}` : projectId;
+    // 只使用项目名称作为文件夹名
+    const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim() || projectId;
     
-    const filePath = path.join(BASE_UPLOAD_PATH, stage, folderName, filename);
+    const filePath = path.join(BASE_UPLOAD_PATH, stage, safeName, filename);
     
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: '文件不存在' });
@@ -135,6 +134,30 @@ app.get('/api/files/view/:stage/:projectId/:filename', (req, res) => {
   } catch (error) {
     console.error('文件预览失败:', error);
     res.status(500).json({ error: '文件预览失败: ' + error.message });
+  }
+});
+
+// 文件下载路由
+app.get('/api/files/download/:stage/:projectId/:filename', auth, (req, res) => {
+  try {
+    const { stage, projectId, filename } = req.params;
+    const projectName = req.query.projectName || '';
+    
+    // 只使用项目名称作为文件夹名
+    const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim() || projectId;
+    
+    const filePath = path.join(BASE_UPLOAD_PATH, stage, safeName, filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: '文件不存在' });
+    }
+    
+    // 使用 download 方法，浏览器会弹出下载对话框
+    const originalName = Buffer.from(filename.split('_').slice(1).join('_'), 'utf8').toString();
+    res.download(filePath, originalName || filename);
+  } catch (error) {
+    console.error('文件下载失败:', error);
+    res.status(500).json({ error: '文件下载失败: ' + error.message });
   }
 });
 

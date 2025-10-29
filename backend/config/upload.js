@@ -24,10 +24,10 @@ const storage = multer.diskStorage({
       // 清理项目名称，移除不允许的文件名字符
       const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim();
       
-      // 构建文件夹名：projectId_projectName
-      const folderName = safeName ? `${projectId}_${safeName}` : projectId;
+      // 只使用项目名称作为文件夹名（如果没有项目名称才用projectId）
+      const folderName = safeName || projectId;
       
-      // 构建路径: F:\OA_Files\{stage}\{projectId_projectName}\
+      // 构建路径: F:\OA_Files\{stage}\{projectName}\
       const uploadPath = path.join(BASE_UPLOAD_PATH, stage, folderName);
       
       // 确保目录存在
@@ -89,15 +89,15 @@ const deleteFile = (filePath) => {
   });
 };
 
-// 生成安全的文件夹名称
+// 生成安全的文件夹名称（只使用项目名称）
 const generateFolderName = (projectId, projectName) => {
   if (!projectName) return projectId;
   
   // 清理项目名称，移除不允许的文件名字符
   const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim();
   
-  // 构建文件夹名：projectId_projectName
-  return `${projectId}_${safeName}`;
+  // 只返回项目名称
+  return safeName || projectId;
 };
 
 // 删除整个项目文件夹
