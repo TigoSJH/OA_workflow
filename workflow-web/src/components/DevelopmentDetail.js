@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './DevelopmentDetail.css';
-import { projectAPI } from '../services/api';
+import { projectAPI, fileAPI } from '../services/api';
 
 const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
   // 合并所有研发图纸到一个数组
@@ -102,45 +102,20 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
     ...myUploadFiles.map(file => ({ ...file, status: 'pending' }))
   ];
 
-  // 压缩图片
-  const compressImage = (file, maxWidth = 1920, quality = 0.8) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-
-          // 如果图片宽度超过最大宽度，按比例缩放
-          if (width > maxWidth) {
-            height = (height * maxWidth) / width;
-            width = maxWidth;
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // 转换为base64，使用质量压缩
-          const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-          resolve({
-            name: file.name,
-            size: (compressedBase64.length / 1024).toFixed(2) + ' KB',
-            type: 'image/jpeg',
-            uploadTime: new Date().toISOString(),
-            uploadBy: user.displayName || user.username,
-            preview: compressedBase64
-          });
-        };
-        img.onerror = reject;
-        img.src = e.target.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+  // 文件上传辅助函数 - 上传到文件系统
+  const uploadFilesToServer = async (files) => {
+    try {
+      const response = await fileAPI.uploadMultipleFiles(
+        files,
+        project.id,
+        project.projectName,
+        'development'
+      );
+      return response.files;
+    } catch (error) {
+      console.error('文件上传失败:', error);
+      throw error;
+    }
   };
 
   // 普通研发人员上传文件（先存到本地状态）
@@ -156,9 +131,9 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
         alert('只能上传图片文件（JPG、PNG、GIF、WebP）');
         return;
       }
-      // 检查文件大小（最大5MB）
-      if (file.size > 5 * 1024 * 1024) {
-        alert(`图片 ${file.name} 超过5MB限制`);
+      // 检查文件大小（最大20MB）
+      if (file.size > 20 * 1024 * 1024) {
+        alert(`图片 ${file.name} 超过20MB限制`);
         return;
       }
     }
@@ -166,12 +141,17 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
     try {
       setUploading(true);
       
-      // 压缩处理所有图片
-      const filePromises = selectedFiles.map(file => compressImage(file));
-      const compressedFiles = await Promise.all(filePromises);
+      // 直接保存文件对象到本地状态（不压缩）
+      const fileObjects = selectedFiles.map(file => ({
+        file: file,  // 保存原始文件对象
+        name: file.name,
+        size: (file.size / 1024).toFixed(2) + ' KB',
+        uploadTime: new Date().toISOString(),
+        uploadBy: user.displayName || user.username,
+        preview: URL.createObjectURL(file)  // 创建临时预览URL
+      }));
       
-      // 添加到本地状态（暂不提交）
-      setMyUploadFiles(prev => [...prev, ...compressedFiles]);
+      setMyUploadFiles(prev => [...prev, ...fileObjects]);
       
       console.log('图片已添加，请确认后提交给主负责人');
     } catch (error) {
@@ -199,8 +179,12 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
     try {
       setShowSubmittingModal(true);
       
-      // 调用团队成员上传API（只发送新添加的文件）
-      await projectAPI.uploadTeamMemberFiles(project.id, myUploadFiles);
+      // 1. 先上传文件到文件系统
+      const files = myUploadFiles.map(item => item.file);
+      const uploadedFiles = await uploadFilesToServer(files);
+      
+      // 2. 然后提交文件信息给主负责人
+      await projectAPI.uploadTeamMemberFiles(project.id, uploadedFiles);
       
       // 1秒后返回首页
       setTimeout(() => {
@@ -287,9 +271,9 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
         console.warn('只能上传图片文件（JPG、PNG、GIF、WebP）');
         return;
       }
-      // 检查文件大小（最大5MB）
-      if (file.size > 5 * 1024 * 1024) {
-        console.warn(`图片 ${file.name} 超过5MB限制`);
+      // 检查文件大小（最大20MB）
+      if (file.size > 20 * 1024 * 1024) {
+        console.warn(`图片 ${file.name} 超过20MB限制`);
         return;
       }
     }
@@ -297,38 +281,23 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
     try {
       setUploading(true);
       
-      // 使用压缩函数处理所有图片
-      const filePromises = selectedFiles.map(file => compressImage(file));
-      const newFiles = await Promise.all(filePromises);
-      const normalized = newFiles.map(f => ({
-        ...f,
-        uploadTime: f.uploadTime || new Date().toISOString(),
-        uploadBy: f.uploadBy || (user.displayName || user.username)
-      }));
-      const updatedFiles = [...developmentDrawings, ...normalized];
+      // 上传文件到文件系统
+      const uploadedFiles = await uploadFilesToServer(selectedFiles);
+      
+      // 合并到现有文件列表
+      const updatedFiles = [...developmentDrawings, ...uploadedFiles];
       setDevelopmentDrawings(updatedFiles);
       
-      // 检查总大小
-      const totalSize = updatedFiles.reduce((sum, file) => {
-        const sizeInKB = parseFloat(file.size);
-        return sum + sizeInKB;
-      }, 0);
-      
-      if (totalSize > 8000) {
-        console.warn('图片总大小超过限制（8MB）');
-        setDevelopmentDrawings(developmentDrawings); // 恢复原状态
-        return;
-      }
-      
-      // 保存到数据库：为了兼容性，保存到 folderScreenshots
+      // 保存到数据库（只存路径信息）
       await projectAPI.updateProject(project.id, {
         folderScreenshots: updatedFiles,
         drawingImages: []
       });
 
-      console.log('研发图纸上传成功');
+      console.log('研发图纸上传成功，已保存到F盘');
     } catch (error) {
       console.error('上传失败：', error.message);
+      alert('上传失败：' + error.message);
     } finally {
       setUploading(false);
     }
@@ -358,7 +327,14 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
 
   // 处理图片预览
   const handleImagePreview = (imageData) => {
-    setPreviewImage(imageData);
+    // 如果是新文件系统（有filename），使用API预览
+    if (imageData.filename) {
+      const viewUrl = fileAPI.viewFile('development', project.id, imageData.filename, project.projectName);
+      setPreviewImage({ ...imageData, preview: viewUrl });
+    } else {
+      // 兼容旧的Base64数据
+      setPreviewImage(imageData);
+    }
     setShowImagePreview(true);
   };
 
@@ -369,19 +345,26 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
   };
 
   // 下载图片
-  const handleDownloadImage = (imageData) => {
-    if (!imageData.preview) {
-      console.warn('该图片无法下载');
-      return;
+  const handleDownloadImage = async (imageData) => {
+    try {
+      // 如果是新文件系统（有filename），使用API下载
+      if (imageData.filename) {
+        await fileAPI.downloadFile('development', project.id, imageData.filename, project.projectName);
+      } else if (imageData.preview) {
+        // 兼容旧的Base64数据
+        const link = document.createElement('a');
+        link.href = imageData.preview;
+        link.download = imageData.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        console.warn('该图片无法下载');
+      }
+    } catch (error) {
+      console.error('下载失败：', error);
+      alert('下载失败：' + error.message);
     }
-    
-    // 创建下载链接
-    const link = document.createElement('a');
-    link.href = imageData.preview;
-    link.download = imageData.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   // 渲染可折叠文件夹
@@ -770,7 +753,7 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
                             {pendingFiles.map((file, fileIndex) => (
                               <div key={fileIndex} className="member-file-item">
                                 <img 
-                                  src={file.preview} 
+                                  src={file.filename ? fileAPI.viewFile('development', project.id, file.filename, project.projectName) : file.preview} 
                                   alt={file.name}
                                   className="member-file-preview"
                                   onClick={() => handleImagePreview(file)}

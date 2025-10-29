@@ -358,11 +358,15 @@ export const fileAPI = {
     const api = new ApiService();
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
-    formData.append('projectId', projectId);
-    formData.append('projectName', projectName);
-    formData.append('stage', stage);
     
-    return api.uploadFile('/files/upload-multiple', formData);
+    // 参数通过URL query string传递，确保Multer的destination函数能获取到
+    const queryParams = new URLSearchParams({
+      projectId: projectId,
+      projectName: projectName,
+      stage: stage
+    });
+    
+    return api.uploadFile(`/files/upload-multiple?${queryParams.toString()}`, formData);
   },
 
   // 获取项目文件列表
@@ -372,18 +376,20 @@ export const fileAPI = {
   },
 
   // 下载文件
-  downloadFile: async (stage, projectId, filename) => {
+  downloadFile: async (stage, projectId, filename, projectName = '') => {
     const api = new ApiService();
     const baseURL = api.baseURL.replace('/api', '');
-    const url = `${baseURL}/api/files/download/${stage}/${projectId}/${filename}`;
+    const queryParams = new URLSearchParams({ projectName });
+    const url = `${baseURL}/api/files/download/${stage}/${projectId}/${filename}?${queryParams.toString()}`;
     window.open(url, '_blank');
   },
 
   // 查看/预览文件
-  viewFile: (stage, projectId, filename) => {
+  viewFile: (stage, projectId, filename, projectName = '') => {
     const api = new ApiService();
     const baseURL = api.baseURL.replace('/api', '');
-    return `${baseURL}/api/files/view/${stage}/${projectId}/${filename}`;
+    const queryParams = new URLSearchParams({ projectName });
+    return `${baseURL}/api/files/view/${stage}/${projectId}/${filename}?${queryParams.toString()}`;
   },
 
   // 删除文件

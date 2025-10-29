@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './ProcessingDetail.css';
-import { projectAPI } from '../services/api';
+import { projectAPI, fileAPI } from '../services/api';
 
 const ProcessingDetail = ({ project, user, onBack }) => {
   // 加工图片
@@ -54,48 +54,20 @@ const ProcessingDetail = ({ project, user, onBack }) => {
   }, [project]);
 
   // 压缩图片
-  const compressImage = (file, maxWidth = 1920, quality = 0.8) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-
-          if (width > maxWidth) {
-            height = (height * maxWidth) / width;
-            width = maxWidth;
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-
-          canvas.toBlob((blob) => {
-            const compressedReader = new FileReader();
-            compressedReader.onloadend = () => {
-              resolve({
-                name: file.name,
-                data: compressedReader.result,
-                url: compressedReader.result,
-                size: (blob.size / 1024).toFixed(2) + ' KB',
-                type: 'image/jpeg',
-                uploadTime: new Date().toISOString(),
-                uploadBy: user.displayName || user.username
-              });
-            };
-            compressedReader.readAsDataURL(blob);
-          }, 'image/jpeg', quality);
-        };
-        img.onerror = reject;
-        img.src = e.target.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+  // 文件上传辅助函数 - 上传到文件系统
+  const uploadFilesToServer = async (files) => {
+    try {
+      const response = await fileAPI.uploadMultipleFiles(
+        files,
+        project.id,
+        project.projectName,
+        'processing'
+      );
+      return response.files;
+    } catch (error) {
+      console.error('文件上传失败:', error);
+      throw error;
+    }
   };
 
   // 处理上传（通用）
@@ -110,8 +82,8 @@ const ProcessingDetail = ({ project, user, onBack }) => {
         alert('只能上传图片文件（JPG、PNG、GIF、WebP）');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        alert(`图片 ${file.name} 超过5MB限制`);
+      if (file.size > 20 * 1024 * 1024) {
+        alert(`图片 ${file.name} 超过20MB限制`);
         return;
       }
     }
@@ -119,15 +91,17 @@ const ProcessingDetail = ({ project, user, onBack }) => {
     try {
       setUploading(true);
       
-      const filePromises = selectedFiles.map(file => compressImage(file));
-      const newFiles = await Promise.all(filePromises);
-      const updatedFiles = [...currentList, ...newFiles];
+      // 上传文件到文件系统
+      const uploadedFiles = await uploadFilesToServer(selectedFiles);
+      const updatedFiles = [...currentList, ...uploadedFiles];
       targetSetter(updatedFiles);
 
       setUploading(false);
+      console.log('文件上传成功，已保存到F盘');
     } catch (error) {
       setUploading(false);
       console.error('图片处理失败:', error.message);
+      alert('上传失败：' + error.message);
     }
 
     e.target.value = '';
@@ -182,18 +156,44 @@ const ProcessingDetail = ({ project, user, onBack }) => {
   };
 
   // 下载图片
-  const handleDownloadImage = (imageData) => {
-    const dataUrl = imageData.url || imageData.data || imageData.preview;
-    if (!dataUrl) {
-      console.warn('该图片无法下载');
-      return;
+  // 处理图片预览
+  const handleImagePreview = (imageData) => {
+    // 如果是新文件系统（有filename），使用API预览
+    if (imageData.filename) {
+      const viewUrl = fileAPI.viewFile('processing', project.id, imageData.filename, project.projectName);
+      setPreviewImage(viewUrl);
+    } else {
+      // 兼容旧的Base64数据
+      const dataUrl = imageData.url || imageData.data || imageData.preview;
+      setPreviewImage(dataUrl);
     }
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = imageData.name || 'image';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setShowImagePreview(true);
+  };
+
+  // 下载图片
+  const handleDownloadImage = async (imageData) => {
+    try {
+      // 如果是新文件系统（有filename），使用API下载
+      if (imageData.filename) {
+        await fileAPI.downloadFile('processing', project.id, imageData.filename, project.projectName);
+      } else {
+        // 兼容旧的Base64数据
+        const dataUrl = imageData.url || imageData.data || imageData.preview;
+        if (!dataUrl) {
+          console.warn('该图片无法下载');
+          return;
+        }
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = imageData.name || 'image';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('下载失败：', error);
+      alert('下载失败：' + error.message);
+    }
   };
 
   // 渲染文件夹（通用）
@@ -224,11 +224,7 @@ const ProcessingDetail = ({ project, user, onBack }) => {
                   <div key={index} className="file-item-compact">
                     <div 
                       className="file-preview-compact"
-                      onClick={() => {
-                        const dataUrl = file.url || file.data || file.preview;
-                        setPreviewImage(dataUrl);
-                        setShowImagePreview(true);
-                      }}
+                      onClick={() => handleImagePreview(file)}
                     >
                       <div className="file-icon-mini">🖼️</div>
                       <div className="file-info-compact">
@@ -249,9 +245,7 @@ const ProcessingDetail = ({ project, user, onBack }) => {
                         className="btn-action-compact btn-view"
                         onClick={(e) => {
                           e.stopPropagation();
-                          const dataUrl = file.url || file.data || file.preview;
-                          setPreviewImage(dataUrl);
-                          setShowImagePreview(true);
+                          handleImagePreview(file);
                         }}
                         title="查看"
                       >

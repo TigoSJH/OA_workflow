@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './EngineeringDetail.css';
-import { projectAPI } from '../services/api';
+import { projectAPI, fileAPI } from '../services/api';
 
 const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
   // 合并所有工程图纸到一个数组
@@ -95,42 +95,20 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
   ];
 
   // 压缩图片
-  const compressImage = (file, maxWidth = 1920, quality = 0.8) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-
-          if (width > maxWidth) {
-            height = (height * maxWidth) / width;
-            width = maxWidth;
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-
-          const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-          resolve({
-            name: file.name,
-            size: (compressedBase64.length / 1024).toFixed(2) + ' KB',
-            type: 'image/jpeg',
-            uploadTime: new Date().toISOString(),
-            uploadBy: user.displayName || user.username,
-            preview: compressedBase64
-          });
-        };
-        img.onerror = reject;
-        img.src = e.target.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+  // 文件上传辅助函数 - 上传到文件系统
+  const uploadFilesToServer = async (files) => {
+    try {
+      const response = await fileAPI.uploadMultipleFiles(
+        files,
+        project.id,
+        project.projectName,
+        'engineering'
+      );
+      return response.files;
+    } catch (error) {
+      console.error('文件上传失败:', error);
+      throw error;
+    }
   };
 
   // 处理工程图纸上传（合并后的单一入口）
@@ -145,8 +123,8 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
         console.warn('只能上传图片文件（JPG、PNG、GIF、WebP）');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        console.warn(`图片 ${file.name} 超过5MB限制`);
+      if (file.size > 20 * 1024 * 1024) {
+        console.warn(`图片 ${file.name} 超过20MB限制`);
         return;
       }
     }
@@ -154,36 +132,23 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
     try {
       setUploading(true);
       
-      const filePromises = selectedFiles.map(file => compressImage(file));
-      const newFiles = await Promise.all(filePromises);
-      const normalized = newFiles.map(f => ({
-        ...f,
-        uploadTime: f.uploadTime || new Date().toISOString(),
-        uploadBy: f.uploadBy || (user.displayName || user.username)
-      }));
-      const updatedFiles = [...engineeringDrawings, ...normalized];
+      // 上传文件到文件系统
+      const uploadedFiles = await uploadFilesToServer(selectedFiles);
+      
+      // 合并到现有文件列表
+      const updatedFiles = [...engineeringDrawings, ...uploadedFiles];
       setEngineeringDrawings(updatedFiles);
       
-      const totalSize = updatedFiles.reduce((sum, file) => {
-        const sizeInKB = parseFloat(file.size);
-        return sum + sizeInKB;
-      }, 0);
-      
-      if (totalSize > 8000) {
-        console.warn('图片总大小超过限制（8MB）');
-        setEngineeringDrawings(engineeringDrawings);
-        return;
-      }
-      
-      // 保存到数据库：为了兼容性，保存到 engineeringDrawings
+      // 保存到数据库（只存路径信息）
       await projectAPI.updateProject(project.id, {
         engineeringDrawings: updatedFiles,
         engineeringDocuments: []
       });
 
-      console.log('工程图纸上传成功');
+      console.log('工程图纸上传成功，已保存到F盘');
     } catch (error) {
       console.error('上传失败：', error.message);
+      alert('上传失败：' + error.message);
     } finally {
       setUploading(false);
     }
@@ -218,18 +183,17 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
 
     try {
       setUploading(true);
-      const filePromises = selectedFiles.map(file => compressImage(file));
-      const compressedFiles = await Promise.all(filePromises);
-      
-      const newFiles = compressedFiles.map((compressedFile, index) => ({
-        name: selectedFiles[index].name,
-        size: (compressedFile.size / 1024).toFixed(2) + ' KB',
-        type: selectedFiles[index].type,
-        preview: compressedFile.preview,
+      // 直接保存原始文件对象用于后续统一提交（不再压缩为Base64）
+      const newFiles = selectedFiles.map(file => ({
+        file,
+        name: file.name,
+        size: (file.size / 1024).toFixed(2) + ' KB',
+        type: file.type,
+        preview: URL.createObjectURL(file),
         uploadTime: new Date().toISOString(),
         uploadBy: user.displayName || user.username
       }));
-      
+
       setMyUploadFiles(prev => [...prev, ...newFiles]);
     } catch (error) {
       console.error('上传失败：', error.message);
@@ -342,7 +306,14 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
 
   // 处理图片预览
   const handleImagePreview = (imageData) => {
-    setPreviewImage(imageData);
+    // 如果是新文件系统（有filename），使用API预览
+    if (imageData.filename) {
+      const viewUrl = fileAPI.viewFile('engineering', project.id, imageData.filename, project.projectName);
+      setPreviewImage({ ...imageData, preview: viewUrl });
+    } else {
+      // 兼容旧的Base64数据
+      setPreviewImage(imageData);
+    }
     setShowImagePreview(true);
   };
 
@@ -353,18 +324,26 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
   };
 
   // 下载图片
-  const handleDownloadImage = (imageData) => {
-    if (!imageData.preview) {
-      console.warn('该图片无法下载');
-      return;
+  const handleDownloadImage = async (imageData) => {
+    try {
+      // 如果是新文件系统（有filename），使用API下载
+      if (imageData.filename) {
+        await fileAPI.downloadFile('engineering', project.id, imageData.filename, project.projectName);
+      } else if (imageData.preview) {
+        // 兼容旧的Base64数据
+        const link = document.createElement('a');
+        link.href = imageData.preview;
+        link.download = imageData.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        console.warn('该图片无法下载');
+      }
+    } catch (error) {
+      console.error('下载失败：', error);
+      alert('下载失败：' + error.message);
     }
-    
-    const link = document.createElement('a');
-    link.href = imageData.preview;
-    link.download = imageData.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   // 渲染可折叠文件夹

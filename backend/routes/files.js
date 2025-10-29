@@ -1,17 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const { upload, deleteFile, generateFolderName, BASE_UPLOAD_PATH } = require('../config/upload');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth'); // 解构导入auth函数
 const path = require('path');
 const fs = require('fs');
 
+// Multer错误处理中间件
+const multerErrorHandler = (err, req, res, next) => {
+  if (err) {
+    return res.status(400).json({ error: err.message });
+  }
+  next();
+};
+
+// 调试：健康检查
+router.get('/ping', (req, res) => {
+  res.json({ ok: true, time: new Date().toISOString() });
+});
+
 // 上传单个文件
-router.post('/upload', auth, (req, res, next) => {
-  upload.single('file')(req, res, async (err) => {
+router.post('/upload', auth, function(req, res, next) {
+  upload.single('file')(req, res, function(err) {
     if (err) {
       return res.status(400).json({ error: err.message });
     }
-
+    
     try {
       if (!req.file) {
         return res.status(400).json({ error: '没有上传文件' });
@@ -41,12 +54,12 @@ router.post('/upload', auth, (req, res, next) => {
 });
 
 // 批量上传文件
-router.post('/upload-multiple', auth, (req, res, next) => {
-  upload.array('files', 50)(req, res, async (err) => {
+router.post('/upload-multiple', auth, function(req, res, next) {
+  upload.array('files', 50)(req, res, function(err) {
     if (err) {
       return res.status(400).json({ error: err.message });
     }
-
+    
     try {
       if (!req.files || req.files.length === 0) {
         return res.status(400).json({ error: '没有上传文件' });
@@ -175,4 +188,3 @@ router.get('/list/:stage/:projectId', auth, (req, res) => {
 });
 
 module.exports = router;
-
