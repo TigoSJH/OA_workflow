@@ -157,9 +157,17 @@ const WarehouseInFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchTo
       {pendingNotification && (
         <NotificationModal
           notification={pendingNotification}
-          onClose={handleCloseNotification}
-          onOpenProject={handleOpenProject}
-          onSuppress={handleSuppressNotification}
+          onView={async (n) => {
+            try {
+              await notificationAPI.markAsRead(n._id || n.id);
+            } catch {}
+            setPendingNotification(null);
+            const project = projects.find(p => String(p.id) === String(n.projectId));
+            if (project) {
+              setSelectedProject(project);
+            }
+          }}
+          onDismiss={handleSuppressNotification}
         />
       )}
 
