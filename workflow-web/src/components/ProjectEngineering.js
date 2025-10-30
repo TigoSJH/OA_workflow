@@ -258,7 +258,7 @@ const ProjectEngineering = ({ user, onLogout, activeRole, onRoleSwitch }) => {
             className={`tab ${activeTab === 'in_progress' ? 'active' : ''}`}
             onClick={() => setActiveTab('in_progress')}
           >
-            进行中 ({stats.inProgress})
+            进行中 ({stats.in_progress})
           </button>
           <button 
             className={`tab ${activeTab === 'completed' ? 'active' : ''}`}
