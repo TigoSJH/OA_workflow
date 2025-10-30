@@ -561,6 +561,8 @@ exports.updateProject = async (req, res) => {
 // 删除项目
 exports.deleteProject = async (req, res) => {
   try {
+    const fs = require('fs');
+    const path = require('path');
     const project = await Project.findById(req.params.id);
     
     if (!project) {
@@ -580,7 +582,51 @@ exports.deleteProject = async (req, res) => {
     
     await Project.findByIdAndDelete(req.params.id);
     
-    res.json({ message: '项目已删除' });
+    // 删除F盘中该项目的所有文件
+    const BASE_UPLOAD_PATH = process.env.UPLOAD_PATH || 'F:\\OA_Files';
+    const projectId = req.params.id;
+    const projectName = project.projectName || '';
+    const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim();
+    const folderName = safeName ? `${projectId}_${safeName}` : projectId;
+    
+    // 所有可能的阶段文件夹
+    const stages = [
+      'development',
+      'engineering', 
+      'purchase',
+      'processing',
+      'assembly',
+      'testing',
+      'warehouseIn',
+      'warehouseOut',
+      'archive',
+      'contracts'  // 合同文件夹
+    ];
+    
+    console.log(`[DELETE] 开始删除项目文件，项目ID: ${projectId}, 文件夹名: ${folderName}`);
+    
+    let deletedCount = 0;
+    let errorCount = 0;
+    
+    for (const stage of stages) {
+      try {
+        const folderPath = path.join(BASE_UPLOAD_PATH, stage, folderName);
+        
+        if (fs.existsSync(folderPath)) {
+          // 递归删除文件夹及其内容
+          fs.rmSync(folderPath, { recursive: true, force: true });
+          console.log(`[DELETE] ✓ 已删除 ${stage}/${folderName}`);
+          deletedCount++;
+        }
+      } catch (err) {
+        console.error(`[DELETE] ❌ 删除 ${stage}/${folderName} 失败:`, err.message);
+        errorCount++;
+      }
+    }
+    
+    console.log(`[DELETE] 完成! 删除了 ${deletedCount} 个文件夹, ${errorCount} 个失败`);
+    
+    res.json({ message: '项目已删除，相关文件已清理' });
   } catch (error) {
     console.error('删除项目错误:', error);
     res.status(500).json({ error: '删除项目失败' });
