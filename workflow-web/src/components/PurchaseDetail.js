@@ -225,7 +225,7 @@ const PurchaseDetail = ({ project, user, onBack }) => {
     <div className="purchase-detail-container">
       <div className="purchase-detail-header">
         <button className="back-button" onClick={onBack}>
-          ← 返回
+          ←
         </button>
         <h2 className="detail-title">📦 采购阶段 - {project.projectName}</h2>
       </div>
@@ -280,7 +280,7 @@ const PurchaseDetail = ({ project, user, onBack }) => {
             {renderFileFolder(
               'rdSection',
               '研发图纸',
-              project.developmentDrawings || [],
+              [...(project.folderScreenshots || []), ...(project.drawingImages || [])],
               '🔬',
               'development'
             )}
