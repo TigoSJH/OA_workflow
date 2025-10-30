@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './AssemblyDetail.css';
-import { projectAPI } from '../services/api';
+import { projectAPI, fileAPI } from '../services/api';
 
 const AssemblyDetailSimple = ({ project, user, onBack }) => {
   const [loading, setLoading] = useState(false);
@@ -69,23 +69,62 @@ const AssemblyDetailSimple = ({ project, user, onBack }) => {
     }
   };
 
-  // 下载图片
-  const handleDownloadImage = (imageData) => {
-    const dataUrl = imageData.url || imageData.data || imageData.preview;
-    if (!dataUrl) {
-      console.warn('该图片无法下载');
-      return;
+  // 图片预览
+  const handleImagePreview = async (imageData, stage = 'assembly') => {
+    try {
+      if (imageData.filename) {
+        console.log('[装配预览] stage:', stage, 'filename:', imageData.filename);
+        const viewUrl = fileAPI.viewFile(stage, project.id, imageData.filename, project.projectName);
+        const response = await fetch(viewUrl, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`无法加载图片 (HTTP ${response.status})`);
+        }
+        
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        setPreviewImage({ ...imageData, url: blobUrl, data: blobUrl, preview: blobUrl, stage });
+      } else {
+        const dataUrl = imageData.url || imageData.data || imageData.preview;
+        setPreviewImage({ ...imageData, url: dataUrl, data: dataUrl, preview: dataUrl, stage });
+      }
+      setShowImagePreview(true);
+    } catch (error) {
+      console.error('[装配预览] 失败:', error);
+      alert('预览失败：' + error.message);
     }
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = imageData.name || 'image';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  };
+
+  // 下载图片
+  const handleDownloadImage = async (imageData, stage = 'assembly') => {
+    try {
+      if (imageData.filename) {
+        await fileAPI.downloadFile(stage, project.id, imageData.filename, project.projectName);
+      } else {
+        const dataUrl = imageData.url || imageData.data || imageData.preview;
+        if (!dataUrl) {
+          console.warn('该图片无法下载');
+          return;
+        }
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = imageData.name || 'image';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('下载失败：', error);
+      alert('下载失败：' + error.message);
+    }
   };
 
   // 渲染文件夹
-  const renderFileFolder = (folderName, displayName, files, icon = '📁') => {
+  const renderFileFolder = (folderName, displayName, files, icon = '📁', stage = 'assembly') => {
     const isExpanded = expandedFolders[folderName];
     const fileCount = files ? files.length : 0;
 
@@ -107,52 +146,45 @@ const AssemblyDetailSimple = ({ project, user, onBack }) => {
             {fileCount === 0 ? (
               <div className="no-files">暂无文件</div>
             ) : (
-              <div className="file-list-compact">
+              <div className="file-list-simple">
                 {files.map((file, index) => (
-                  <div key={index} className="file-item-compact">
-                    <div 
-                      className="file-preview-compact"
-                      onClick={() => {
-                        const dataUrl = file.url || file.data || file.preview;
-                        setPreviewImage(dataUrl);
-                        setShowImagePreview(true);
-                      }}
-                    >
-                      <div className="file-icon-mini">🖼️</div>
-                      <div className="file-info-compact">
-                        <div className="file-name-compact">{file.name}</div>
-                        <div className="file-meta-compact">
-                          {file.size} · {file.uploadTime ? new Date(file.uploadTime).toLocaleString('zh-CN', { 
-                            month: '2-digit', 
-                            day: '2-digit', 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          }) : ''}
-                          {file.uploadBy && ` · ${file.uploadBy}`}
-                        </div>
+                  <div 
+                    key={index} 
+                    className="file-item-simple"
+                    onClick={() => handleImagePreview(file, stage)}
+                  >
+                    <div className="file-info-simple">
+                      <div className="file-name-simple">{file.name}</div>
+                      <div className="file-meta-simple">
+                        {file.size} · {file.uploadTime ? new Date(file.uploadTime).toLocaleString('zh-CN', { 
+                          month: '2-digit', 
+                          day: '2-digit', 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        }) : ''}
+                        {file.uploadBy && ` · ${file.uploadBy}`}
                       </div>
                     </div>
-                    <div className="file-actions-compact">
+                    <div className="file-actions-simple">
                       <button 
-                        className="btn-action-compact btn-view"
+                        className="btn-action-simple btn-view"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setPreviewImage(file);
-                          setShowImagePreview(true);
+                          handleImagePreview(file, stage);
                         }}
-                        title="查看"
+                        title="预览"
                       >
-                        👁️
+                        👁️ 预览
                       </button>
                       <button 
-                        className="btn-action-compact btn-download"
+                        className="btn-action-simple btn-download"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDownloadImage(file);
+                          handleDownloadImage(file, stage);
                         }}
                         title="下载"
                       >
-                        ⬇️
+                        ⬇️ 下载
                       </button>
                     </div>
                   </div>
@@ -246,28 +278,32 @@ const AssemblyDetailSimple = ({ project, user, onBack }) => {
             project.developmentDrawings && project.developmentDrawings.length > 0
               ? project.developmentDrawings
               : ([...(project.folderScreenshots || []), ...(project.drawingImages || [])]),
-            '📊'
+            '📊',
+            'development'
           )}
 
           {renderFileFolder(
             'engSection',
             '工程图纸',
             [...(project.engineeringDrawings || []), ...(project.engineeringDocuments || [])],
-            '🛠️'
+            '🛠️',
+            'engineering'
           )}
 
           {renderFileFolder(
             'purchaseSection',
             '采购清单',
-            [...(project.purchaseDocuments || []), ...(project.invoiceDocuments || [])],
-            '🛒'
+            project.purchaseDocuments || [],
+            '🛒',
+            'purchase'
           )}
 
           {renderFileFolder(
             'processingSection',
             '加工图片',
             project.processingImages || [],
-            '⚙️'
+            '⚙️',
+            'processing'
           )}
         </div>
 
@@ -353,7 +389,7 @@ const AssemblyDetailSimple = ({ project, user, onBack }) => {
               </div>
               <button 
                 className="btn-download-preview"
-                onClick={() => handleDownloadImage(previewImage)}
+                onClick={() => handleDownloadImage(previewImage, previewImage.stage || 'assembly')}
               >
                 ⬇️ 下载图片
               </button>

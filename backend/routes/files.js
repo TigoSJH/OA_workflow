@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { upload, deleteFile, generateFolderName, BASE_UPLOAD_PATH } = require('../config/upload');
+const { upload, deleteFile, generateFolderName, findFolderPath, BASE_UPLOAD_PATH } = require('../config/upload');
 const { auth } = require('../middleware/auth'); // 解构导入auth函数
 const path = require('path');
 const fs = require('fs');
@@ -94,10 +94,16 @@ router.get('/download/:stage/:projectId/:filename', auth, (req, res) => {
   try {
     const { stage, projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
-    const folderName = generateFolderName(projectId, projectName);
-    const filePath = path.join(BASE_UPLOAD_PATH, stage, folderName, filename);
+    
+    // 使用findFolderPath查找实际文件夹路径
+    const folderPath = findFolderPath(stage, projectId, projectName);
+    const filePath = path.join(folderPath, filename);
+
+    console.log('下载文件请求:', { stage, projectId, projectName, filename });
+    console.log('文件路径:', filePath);
 
     if (!fs.existsSync(filePath)) {
+      console.error('文件不存在:', filePath);
       return res.status(404).json({ error: '文件不存在' });
     }
 
@@ -113,11 +119,17 @@ router.get('/view/:stage/:projectId/:filename', auth, (req, res) => {
   try {
     const { stage, projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
-    const folderName = generateFolderName(projectId, projectName);
-    const filePath = path.join(BASE_UPLOAD_PATH, stage, folderName, filename);
+    
+    // 使用findFolderPath查找实际文件夹路径
+    const folderPath = findFolderPath(stage, projectId, projectName);
+    const filePath = path.join(folderPath, filename);
+
+    console.log('预览文件请求:', { stage, projectId, projectName, filename });
+    console.log('文件路径:', filePath);
 
     if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: '文件不存在' });
+      console.error('文件不存在:', filePath);
+      return res.status(404).json({ error: '文件不存在', path: filePath });
     }
 
     res.sendFile(filePath);
@@ -132,10 +144,16 @@ router.delete('/:stage/:projectId/:filename', auth, async (req, res) => {
   try {
     const { stage, projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
-    const folderName = generateFolderName(projectId, projectName);
-    const filePath = path.join(BASE_UPLOAD_PATH, stage, folderName, filename);
+    
+    // 使用findFolderPath查找实际文件夹路径
+    const folderPath = findFolderPath(stage, projectId, projectName);
+    const filePath = path.join(folderPath, filename);
+
+    console.log('删除文件请求:', { stage, projectId, projectName, filename });
+    console.log('文件路径:', filePath);
 
     if (!fs.existsSync(filePath)) {
+      console.error('文件不存在:', filePath);
       return res.status(404).json({ error: '文件不存在' });
     }
 
@@ -156,8 +174,9 @@ router.get('/list/:stage/:projectId', auth, (req, res) => {
   try {
     const { stage, projectId } = req.params;
     const projectName = req.query.projectName || '';
-    const folderName = generateFolderName(projectId, projectName);
-    const folderPath = path.join(BASE_UPLOAD_PATH, stage, folderName);
+    
+    // 使用findFolderPath查找实际文件夹路径
+    const folderPath = findFolderPath(stage, projectId, projectName);
 
     if (!fs.existsSync(folderPath)) {
       return res.json({ files: [] });

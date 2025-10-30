@@ -30,6 +30,7 @@ exports.getPendingProjects = async (req, res) => {
         researchDuration: project.researchDuration,
         contractAmount: project.contractAmount,
         contractDuration: project.contractDuration,
+        contractFile: project.contractFile,  // 合同文件名
         budget: project.budget,
         duration: project.duration,
         priority: project.priority,
@@ -86,6 +87,7 @@ exports.getApprovedProjects = async (req, res) => {
         researchDuration: project.researchDuration,
         contractAmount: project.contractAmount,
         contractDuration: project.contractDuration,
+        contractFile: project.contractFile,  // 合同文件名
         budget: project.budget,
         duration: project.duration,
         priority: project.priority,
@@ -359,6 +361,11 @@ exports.getAllProjects = async (req, res) => {
         description: project.description,
         researchDirection: project.researchDirection,
         researchPurpose: project.researchPurpose,
+        researchBudget: project.researchBudget,
+        researchDuration: project.researchDuration,
+        contractAmount: project.contractAmount,
+        contractDuration: project.contractDuration,
+        contractFile: project.contractFile,  // 合同文件名
         budget: project.budget,
         duration: project.duration,
         priority: project.priority,
@@ -380,6 +387,11 @@ exports.getAllProjects = async (req, res) => {
         description: project.description,
         researchDirection: project.researchDirection,
         researchPurpose: project.researchPurpose,
+        researchBudget: project.researchBudget,
+        researchDuration: project.researchDuration,
+        contractAmount: project.contractAmount,
+        contractDuration: project.contractDuration,
+        contractFile: project.contractFile,  // 合同文件名
         budget: project.budget,
         duration: project.duration,
         priority: project.priority,
@@ -481,6 +493,7 @@ exports.createProject = async (req, res) => {
       researchDuration,
       contractAmount,
       contractDuration,
+      contractFile,
       budget,
       duration,
       priority
@@ -511,6 +524,7 @@ exports.createProject = async (req, res) => {
       researchDuration,
       contractAmount,
       contractDuration,
+      contractFile,  // 保存合同文件名
       budget,
       duration,
       priority: priority || 'normal',
@@ -642,6 +656,7 @@ exports.approveProject = async (req, res) => {
           researchDuration: pendingProject.researchDuration,
           contractAmount: pendingProject.contractAmount,
           contractDuration: pendingProject.contractDuration,
+          contractFile: pendingProject.contractFile,  // 保存合同文件名
           budget: pendingProject.budget,
           duration: pendingProject.duration,
           priority: pendingProject.priority,

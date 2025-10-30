@@ -50,6 +50,7 @@ exports.getProjects = async (req, res) => {
         researchDuration: project.researchDuration,
         contractAmount: project.contractAmount,
         contractDuration: project.contractDuration,
+        contractFile: project.contractFile,  // 合同文件
         budget: project.budget,
         duration: project.duration,
         priority: project.priority,
@@ -158,6 +159,7 @@ exports.getProject = async (req, res) => {
         researchDuration: project.researchDuration,
         contractAmount: project.contractAmount,
         contractDuration: project.contractDuration,
+        contractFile: project.contractFile,  // 合同文件
         budget: project.budget,
         duration: project.duration,
         priority: project.priority,

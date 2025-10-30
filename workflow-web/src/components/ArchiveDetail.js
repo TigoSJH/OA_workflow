@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './ArchiveDetail.css';
-import { projectAPI } from '../services/api';
+import { projectAPI, fileAPI } from '../services/api';
 
 const ArchiveDetail = ({ projectId, user, onBack }) => {
   const [project, setProject] = useState(null);
@@ -154,25 +154,79 @@ const ArchiveDetail = ({ projectId, user, onBack }) => {
     }
   };
 
-  // 下载图片
-  const handleDownloadImage = (imageData) => {
-    const dataUrl = imageData.url || imageData.data || imageData.preview;
-    if (!dataUrl) {
-      console.warn('该图片无法下载');
-      return;
+  // 图片预览
+  const handleImagePreview = async (imageData, stage = 'assembly') => {
+    try {
+      if (imageData.filename) {
+        console.log('[归档预览] stage:', stage, 'filename:', imageData.filename);
+        const viewUrl = fileAPI.viewFile(stage, project.id, imageData.filename, project.projectName);
+        const response = await fetch(viewUrl, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`无法加载图片 (HTTP ${response.status})`);
+        }
+        
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        setPreviewImage({ ...imageData, url: blobUrl, data: blobUrl, preview: blobUrl, stage });
+      } else {
+        const dataUrl = imageData.url || imageData.data || imageData.preview;
+        setPreviewImage({ ...imageData, url: dataUrl, data: dataUrl, preview: dataUrl, stage });
+      }
+      setShowImagePreview(true);
+    } catch (error) {
+      console.error('[归档预览] 失败:', error);
+      alert('预览失败：' + error.message);
     }
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = imageData.name || 'image';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  };
+
+  // 下载图片
+  const handleDownloadImage = async (imageData, stage = 'assembly') => {
+    try {
+      if (imageData.filename) {
+        await fileAPI.downloadFile(stage, project.id, imageData.filename, project.projectName);
+      } else {
+        const dataUrl = imageData.url || imageData.data || imageData.preview;
+        if (!dataUrl) {
+          console.warn('该图片无法下载');
+          return;
+        }
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = imageData.name || 'image';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('下载失败：', error);
+      alert('下载失败：' + error.message);
+    }
   };
 
   // 渲染文件夹
-  const renderFileFolder = (folderName, displayName, files, icon = '📁') => {
+  const renderFileFolder = (folderName, displayName, files, icon = '📁', stage = 'assembly') => {
     const isExpanded = expandedFolders[folderName];
     const fileCount = files ? files.length : 0;
+
+    // 批量下载处理函数
+    const handleDownloadAll = async (e) => {
+      e.stopPropagation(); // 阻止点击事件冒泡到父元素
+      if (fileCount === 0) return;
+      
+      try {
+        console.log('[批量下载] 开始下载:', { stage, displayName, fileCount });
+        await fileAPI.downloadZip(stage, project.id, project.projectName, displayName);
+        console.log('[批量下载] 下载成功');
+      } catch (error) {
+        console.error('[批量下载] 下载失败:', error);
+        alert('批量下载失败：' + error.message);
+      }
+    };
 
     return (
       <div className="file-folder">
@@ -181,10 +235,23 @@ const ArchiveDetail = ({ projectId, user, onBack }) => {
           onClick={() => toggleFolder(folderName)}
           style={{ cursor: 'pointer' }}
         >
-          <span className="folder-icon">{isExpanded ? '📂' : icon}</span>
-          <span className="folder-name">{displayName}</span>
-          <span className="file-count">({fileCount})</span>
-          <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
+          <div className="folder-left">
+            <span className="folder-icon">{isExpanded ? '📂' : icon}</span>
+            <span className="folder-name">{displayName}</span>
+            <span className="file-count">({fileCount} 个文件)</span>
+          </div>
+          <div className="folder-right">
+            {fileCount > 0 && (
+              <button 
+                className="btn-download-all"
+                onClick={handleDownloadAll}
+                title="打包下载全部文件"
+              >
+                📦 下载全部
+              </button>
+            )}
+            <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
+          </div>
         </div>
         {isExpanded && (
           <div className="folder-content">
@@ -210,17 +277,14 @@ const ArchiveDetail = ({ projectId, user, onBack }) => {
                       <button 
                         className="btn-view"
                         title="查看"
-                        onClick={() => {
-                          setPreviewImage(file);
-                          setShowImagePreview(true);
-                        }}
+                        onClick={() => handleImagePreview(file, stage)}
                       >
                         👁️
                       </button>
                       <button 
                         className="btn-download"
                         title="下载"
-                        onClick={() => handleDownloadImage(file)}
+                        onClick={() => handleDownloadImage(file, stage)}
                       >
                         ⬇️
                       </button>
@@ -332,6 +396,7 @@ const ArchiveDetail = ({ projectId, user, onBack }) => {
               </span>
             </div>
           </div>
+
         </div>
 
         {/* 项目描述 */}
@@ -481,35 +546,32 @@ const ArchiveDetail = ({ projectId, user, onBack }) => {
             project.developmentDrawings && project.developmentDrawings.length > 0
               ? project.developmentDrawings
               : ([...(project.folderScreenshots || []), ...(project.drawingImages || [])]),
-            '📐'
+            '📐',
+            'development'
           )}
 
           {renderFileFolder(
             'engSection',
             '工程图纸',
             [...(project.engineeringDrawings || []), ...(project.engineeringDocuments || [])],
-            '🛠️'
+            '🛠️',
+            'engineering'
           )}
 
           {renderFileFolder(
             'purchaseSection',
             '采购清单',
             project.purchaseDocuments || [],
-            '📦'
-          )}
-
-          {renderFileFolder(
-            'invoiceSection',
-            '发票图片',
-            project.invoiceDocuments || [],
-            '📄'
+            '📦',
+            'purchase'
           )}
 
           {renderFileFolder(
             'processingSection',
             '加工图片',
             project.processingImages || [],
-            '⚙️'
+            '⚙️',
+            'processing'
           )}
         </div>
 
@@ -601,7 +663,7 @@ const ArchiveDetail = ({ projectId, user, onBack }) => {
               </div>
               <button 
                 className="btn-download-preview"
-                onClick={() => handleDownloadImage(previewImage)}
+                onClick={() => handleDownloadImage(previewImage, previewImage.stage || 'assembly')}
               >
                 ⬇️ 下载图片
               </button>

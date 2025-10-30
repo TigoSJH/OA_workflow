@@ -4,12 +4,17 @@ const User = require('../models/User');
 // 验证 JWT Token
 const auth = async (req, res, next) => {
   try {
+    console.log('[AUTH] 请求路径:', req.method, req.path);
+    
     // 从请求头获取 token
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
+      console.log('[AUTH] ❌ 未提供token');
       return res.status(401).json({ error: '未提供认证令牌，请先登录' });
     }
+    
+    console.log('[AUTH] ✓ Token存在');
     
     // 验证 token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -18,12 +23,16 @@ const auth = async (req, res, next) => {
     const user = await User.findById(decoded.userId);
     
     if (!user) {
+      console.log('[AUTH] ❌ 用户不存在');
       return res.status(401).json({ error: '用户不存在' });
     }
     
     if (user.status !== 'approved') {
+      console.log('[AUTH] ❌ 账号未激活');
       return res.status(403).json({ error: '账号未激活，请等待管理员审批' });
     }
+    
+    console.log('[AUTH] ✓ 认证成功，用户:', user.username);
     
     // 将用户信息附加到请求对象
     req.user = user;
@@ -31,6 +40,7 @@ const auth = async (req, res, next) => {
     
     next();
   } catch (error) {
+    console.log('[AUTH] ❌ 认证错误:', error.message);
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ error: '无效的认证令牌' });
     }

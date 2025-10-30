@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './ProjectDetail.css';
-import { projectAPI } from '../services/api';
+import { projectAPI, fileAPI } from '../services/api';
 
 const ProjectDetail = ({ project, user, onBack, onUpdate }) => {
   const [feedback, setFeedback] = useState('');
@@ -478,52 +478,6 @@ const ProjectDetail = ({ project, user, onBack, onUpdate }) => {
                       <p>{project.description}</p>
                     </div>
                   </>
-                )}
-              </div>
-            </div>
-
-            {/* 合同文件 */}
-            <div className="detail-section">
-              <div className="section-header">
-                <span className="section-icon">📎</span>
-                <h4 className="section-title">合同文件</h4>
-              </div>
-              <div className="section-content">
-                {contractFile ? (
-                  <div className="contract-file">
-                    <div className="file-item">
-                      <span className="file-icon">📄</span>
-                      <div className="file-info">
-                        <div className="file-name">{contractFile.name}</div>
-                        <div className="file-meta">{contractFile.size} · {contractFile.uploadTime}</div>
-                      </div>
-                      <button 
-                        className="btn-download"
-                        onClick={() => alert('下载功能需要后端支持')}
-                      >
-                        ⬇️ 下载
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="empty-contract">
-                    <div className="empty-icon">📄</div>
-                    <p>暂未上传合同文件</p>
-                    {user.roles && user.roles.includes('manager') && project.status === 'pending' && (
-                      <div className="upload-area">
-                        <input
-                          type="file"
-                          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.zip,.rar"
-                          onChange={handleFileUpload}
-                          id="contract-upload"
-                          style={{ display: 'none' }}
-                        />
-                        <label htmlFor="contract-upload" className="upload-button">
-                          📤 上传合同文件
-                        </label>
-                      </div>
-                    )}
-                  </div>
                 )}
               </div>
             </div>

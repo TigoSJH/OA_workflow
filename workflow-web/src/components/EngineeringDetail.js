@@ -88,6 +88,26 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
     }
   }, [project, isPrimaryLeader, user._id, user.id]);
 
+  // 页面卸载时清理未提交的文件
+  useEffect(() => {
+    return () => {
+      // 组件卸载时，如果有未提交的文件，删除它们
+      if (myUploadFiles.length > 0 && !isPrimaryLeader) {
+        console.log('[工程] 页面退出，清理未提交文件:', myUploadFiles.length, '个');
+        myUploadFiles.forEach(async (file) => {
+          if (file.filename) {
+            try {
+              await fileAPI.deleteFile('engineering', project.id, file.filename, project.projectName);
+              console.log('[工程] 已清理F盘文件:', file.filename);
+            } catch (error) {
+              console.error('[工程] 清理文件失败:', file.filename, error);
+            }
+          }
+        });
+      }
+    };
+  }, [myUploadFiles, isPrimaryLeader, project.id, project.projectName]);
+
   // 合并已提交和未提交的文件用于显示，添加状态标记
   const allMyFiles = [
     ...submittedFiles.map(file => ({ ...file, status: 'submitted' })),
@@ -129,15 +149,15 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
       }
     }
 
+    let uploadedFiles = null;
     try {
       setUploading(true);
       
       // 上传文件到文件系统
-      const uploadedFiles = await uploadFilesToServer(selectedFiles);
+      uploadedFiles = await uploadFilesToServer(selectedFiles);
       
       // 合并到现有文件列表
       const updatedFiles = [...engineeringDrawings, ...uploadedFiles];
-      setEngineeringDrawings(updatedFiles);
       
       // 保存到数据库（只存路径信息）
       await projectAPI.updateProject(project.id, {
@@ -145,9 +165,28 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
         engineeringDocuments: []
       });
 
+      // 只有成功保存到数据库后才更新本地状态
+      setEngineeringDrawings(updatedFiles);
       console.log('工程图纸上传成功，已保存到F盘');
+      console.log('上传的文件信息:', uploadedFiles);
     } catch (error) {
       console.error('上传失败：', error.message);
+      
+      // 如果保存到数据库失败且文件已经上传到服务器，需要清理这些文件
+      if (uploadedFiles && uploadedFiles.length > 0) {
+        console.log('保存失败，正在清理已上传的文件...');
+        try {
+          for (const file of uploadedFiles) {
+            if (file.filename) {
+              await fileAPI.deleteFile('engineering', project.id, file.filename, project.projectName);
+            }
+          }
+          console.log('已清理上传的文件');
+        } catch (cleanupError) {
+          console.error('清理文件失败:', cleanupError);
+        }
+      }
+      
       alert('上传失败：' + error.message);
     } finally {
       setUploading(false);
@@ -156,23 +195,61 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
 
   // 删除工程图纸
   const handleDeleteEngineeringDrawing = async (index) => {
-    if (window.confirm('确认删除此图片？')) {
-      try {
-        setLoading(true);
-        const updatedFiles = engineeringDrawings.filter((_, i) => i !== index);
-        setEngineeringDrawings(updatedFiles);
-        
-        await projectAPI.updateProject(project.id, {
-          engineeringDrawings: updatedFiles,
-          engineeringDocuments: []
-        });
-        
-        console.log('图片已删除');
-      } catch (error) {
-        console.error('删除失败：', error.message);
-      } finally {
-        setLoading(false);
+    // 显示删除中提示
+    const toast = document.createElement('div');
+    toast.textContent = '🗑️ 正在删除...';
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.2s ease-in-out;
+    `;
+    document.body.appendChild(toast);
+    
+    const fileToDelete = engineeringDrawings[index];
+    try {
+      setLoading(true);
+      
+      // 1. 先从数据库中删除记录
+      const updatedFiles = engineeringDrawings.filter((_, i) => i !== index);
+      await projectAPI.updateProject(project.id, {
+        engineeringDrawings: updatedFiles,
+        engineeringDocuments: []
+      });
+      
+      // 2. 然后删除F盘中的文件
+      if (fileToDelete && fileToDelete.filename) {
+        try {
+          await fileAPI.deleteFile('engineering', project.id, fileToDelete.filename, project.projectName);
+          console.log('已删除F盘中的文件:', fileToDelete.filename);
+        } catch (fileDeleteError) {
+          console.error('删除F盘文件失败:', fileDeleteError);
+          // 文件删除失败但数据库已更新，记录错误但继续
+        }
       }
+      
+      // 3. 更新本地状态
+      setEngineeringDrawings(updatedFiles);
+      console.log('图片已删除');
+      
+      // 1秒后移除提示
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 1000);
+    } catch (error) {
+      console.error('删除失败：', error.message);
+      alert('删除失败：' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -203,9 +280,46 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
   };
 
   // 删除我的上传文件（普通工程师）
-  const handleDeleteMyUpload = (index) => {
-    if (window.confirm('确认删除此图片？')) {
+  const handleDeleteMyUpload = async (index) => {
+    const fileToDelete = myUploadFiles[index];
+    
+    try {
+      // 显示删除中提示
+      const toast = document.createElement('div');
+      toast.textContent = '🗑️ 正在删除...';
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        animation: fadeIn 0.2s ease-in-out;
+      `;
+      document.body.appendChild(toast);
+      
+      // 删除F盘上的文件
+      if (fileToDelete.filename) {
+        await fileAPI.deleteFile('engineering', project.id, fileToDelete.filename, project.projectName);
+        console.log('[工程] 已删除F盘文件:', fileToDelete.filename);
+      }
+      
+      // 删除本地state
       setMyUploadFiles(prev => prev.filter((_, i) => i !== index));
+      
+      // 1秒后移除提示
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 1000);
+    } catch (error) {
+      console.error('[工程] 删除文件失败:', error);
+      alert('删除失败：' + error.message);
     }
   };
   
@@ -216,11 +330,16 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
       return;
     }
     
+    let uploadedFiles = null;
     try {
       setShowSubmittingModal(true);
       
-      // 调用团队成员上传API（只发送新添加的文件）
-      await projectAPI.uploadTeamMemberEngineeringFiles(project.id, myUploadFiles);
+      // 1. 先上传文件到文件系统
+      const files = myUploadFiles.map(item => item.file);
+      uploadedFiles = await uploadFilesToServer(files);
+      
+      // 2. 然后提交文件信息给主负责人
+      await projectAPI.uploadTeamMemberEngineeringFiles(project.id, uploadedFiles);
       
       // 1秒后返回首页
       setTimeout(() => {
@@ -232,6 +351,22 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
     } catch (error) {
       console.error('提交失败：', error.message);
       setShowSubmittingModal(false);
+      
+      // 如果提交失败且文件已经上传到服务器，需要清理这些文件
+      if (uploadedFiles && uploadedFiles.length > 0) {
+        console.log('提交失败，正在清理已上传的文件...');
+        try {
+          for (const file of uploadedFiles) {
+            if (file.filename) {
+              await fileAPI.deleteFile('engineering', project.id, file.filename, project.projectName);
+            }
+          }
+          console.log('已清理上传的文件');
+        } catch (cleanupError) {
+          console.error('清理文件失败:', cleanupError);
+        }
+      }
+      
       alert('提交失败：' + error.message);
     }
   };
@@ -305,16 +440,38 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
   };
 
   // 处理图片预览
-  const handleImagePreview = (imageData) => {
-    // 如果是新文件系统（有filename），使用API预览
-    if (imageData.filename) {
-      const viewUrl = fileAPI.viewFile('engineering', project.id, imageData.filename, project.projectName);
-      setPreviewImage({ ...imageData, preview: viewUrl });
-    } else {
-      // 兼容旧的Base64数据
-      setPreviewImage(imageData);
+  const handleImagePreview = async (imageData, stage = 'engineering') => {
+    console.log('准备预览图片:', imageData, 'stage:', stage);
+    try {
+      // 如果是新文件系统（有filename），使用fetch获取图片并转换为blob URL
+      if (imageData.filename) {
+        console.log('使用文件系统预览，filename:', imageData.filename, 'stage:', stage);
+        const viewUrl = fileAPI.viewFile(stage, project.id, imageData.filename, project.projectName);
+        console.log('预览URL:', viewUrl);
+        const response = await fetch(viewUrl, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        console.log('预览响应状态:', response.status);
+        if (!response.ok) {
+          throw new Error(`无法加载图片 (HTTP ${response.status})`);
+        }
+        
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        setPreviewImage({ ...imageData, preview: blobUrl });
+      } else {
+        // 兼容旧的Base64数据或本地预览URL
+        console.log('使用本地预览URL');
+        setPreviewImage(imageData);
+      }
+      setShowImagePreview(true);
+    } catch (error) {
+      console.error('预览图片失败:', error);
+      alert('无法预览图片: ' + error.message);
     }
-    setShowImagePreview(true);
   };
 
   // 关闭图片预览
@@ -324,11 +481,12 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
   };
 
   // 下载图片
-  const handleDownloadImage = async (imageData) => {
+  const handleDownloadImage = async (imageData, stage = 'engineering') => {
     try {
       // 如果是新文件系统（有filename），使用API下载
       if (imageData.filename) {
-        await fileAPI.downloadFile('engineering', project.id, imageData.filename, project.projectName);
+        console.log('[工程下载] stage:', stage, 'filename:', imageData.filename);
+        await fileAPI.downloadFile(stage, project.id, imageData.filename, project.projectName);
       } else if (imageData.preview) {
         // 兼容旧的Base64数据
         const link = document.createElement('a');
@@ -347,9 +505,24 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
   };
 
   // 渲染可折叠文件夹
-  const renderFileFolder = (title, icon, folderKey, files, readOnly = false, onDelete = null) => {
+  const renderFileFolder = (title, icon, folderKey, files, readOnly = false, onDelete = null, stage = 'engineering') => {
     const isExpanded = expandedFolders[folderKey];
     const fileCount = files?.length || 0;
+
+    // 批量下载处理函数
+    const handleDownloadAll = async (e) => {
+      e.stopPropagation(); // 阻止点击事件冒泡到父元素
+      if (fileCount === 0) return;
+      
+      try {
+        console.log('[批量下载] 开始下载:', { stage, title, fileCount });
+        await fileAPI.downloadZip(stage, project.id, project.projectName, title);
+        console.log('[批量下载] 下载成功');
+      } catch (error) {
+        console.error('[批量下载] 下载失败:', error);
+        alert('批量下载失败：' + error.message);
+      }
+    };
 
     return (
       <div className="file-folder-container subfolder">
@@ -363,64 +536,73 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
             <span className="folder-title">{title}</span>
             <span className="file-count">({fileCount} 个文件)</span>
           </div>
-          <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
+          <div className="folder-right">
+            {fileCount > 0 && (
+              <button 
+                className="btn-download-all"
+                onClick={handleDownloadAll}
+                title="打包下载全部文件"
+              >
+                📦 下载全部
+              </button>
+            )}
+            <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
+          </div>
         </div>
 
         {isExpanded && (
           <div className="folder-content">
             {fileCount > 0 ? (
-              <div className="file-list-compact">
+              <div className="file-list-simple">
                 {files.map((file, index) => (
-                  <div key={index} className="file-item-compact">
-                    <div 
-                      className="file-preview-compact"
-                      onClick={() => handleImagePreview(file)}
-                    >
-                      <div className="file-icon-mini">🖼️</div>
-                      <div className="file-info-compact">
-                        <div className="file-name-compact">{file.name}</div>
-                        <div className="file-meta-compact">
-                          {file.size} · {new Date(file.uploadTime).toLocaleString('zh-CN', { 
-                            month: '2-digit', 
-                            day: '2-digit', 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                          {file.uploadBy && ` · ${file.uploadBy}`}
-                        </div>
+                  <div 
+                    key={index} 
+                    className="file-item-simple"
+                    onClick={() => handleImagePreview(file, stage)}
+                  >
+                    <div className="file-info-simple">
+                      <div className="file-name-simple">{file.name}</div>
+                      <div className="file-meta-simple">
+                        {file.size} · {new Date(file.uploadTime).toLocaleString('zh-CN', { 
+                          month: '2-digit', 
+                          day: '2-digit', 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                        {file.uploadBy && ` · ${file.uploadBy}`}
                       </div>
                     </div>
-                    <div className="file-actions-compact">
+                    <div className="file-actions-simple">
                       <button 
-                        className="btn-action-compact btn-view"
+                        className="btn-action-simple btn-view"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleImagePreview(file);
+                          handleImagePreview(file, stage);
                         }}
-                        title="查看"
+                        title="预览"
                       >
-                        👁️
+                        👁️ 预览
                       </button>
                       <button 
-                        className="btn-action-compact btn-download"
+                        className="btn-action-simple btn-download"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDownloadImage(file);
+                          handleDownloadImage(file, stage);
                         }}
                         title="下载"
                       >
-                        ⬇️
+                        ⬇️ 下载
                       </button>
                       {!readOnly && onDelete && (
                         <button 
-                          className="btn-action-compact btn-delete"
+                          className="btn-action-simple btn-delete"
                           onClick={(e) => {
                             e.stopPropagation();
                             onDelete(index);
                           }}
                           title="删除"
                         >
-                          🗑️
+                          🗑️ 删除
                         </button>
                       )}
                     </div>
@@ -640,7 +822,9 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
             '📐', 
             'rdSection', 
             [...(project.folderScreenshots || []), ...(project.drawingImages || [])],
-            true
+            true,
+            null,
+            'development'
           )}
 
           {/* 主负责人：显示整合后的工程图纸 */}
@@ -730,20 +914,30 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
                             </span>
                           </div>
                           
-                          {/* 只显示待整合的文件 */}
-                          <div className="member-files-grid">
+                          {/* 只显示待整合的文件 - 列表形式 */}
+                          <div className="member-files-list">
                             {pendingFiles.map((file, fileIndex) => (
-                              <div key={fileIndex} className="member-file-item">
-                                <img 
-                                  src={file.preview} 
-                                  alt={file.name}
-                                  className="member-file-preview"
-                                  onClick={() => handleImagePreview(file)}
-                                />
-                                <div className="member-file-info">
-                                  <span className="member-file-name">{file.name}</span>
-                                  <span className="member-file-size">{file.size}</span>
+                              <div 
+                                key={fileIndex} 
+                                className="member-file-item-compact"
+                                onClick={() => handleImagePreview(file, 'engineering')}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                <span className="file-icon">📄</span>
+                                <div className="file-name-info">
+                                  <span className="file-name">{file.name}</span>
+                                  <span className="file-size">{file.size}</span>
                                 </div>
+                                <button 
+                                  className="btn-preview-small"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleImagePreview(file, 'engineering');
+                                  }}
+                                  title="预览"
+                                >
+                                  👁️
+                                </button>
                               </div>
                             ))}
                           </div>

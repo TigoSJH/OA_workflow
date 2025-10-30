@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './AssemblyDetail.css';
-import { projectAPI } from '../services/api';
+import { projectAPI, fileAPI } from '../services/api';
 
 const AssemblyDetailTeam = ({ project, user, onBack }) => {
   const [uploading, setUploading] = useState(false);
@@ -83,13 +83,49 @@ const AssemblyDetailTeam = ({ project, user, onBack }) => {
     }
   }, [project, isPrimaryLeader, user._id, user.id]);
 
+  // 页面卸载时清理未提交的文件
+  useEffect(() => {
+    return () => {
+      // 组件卸载时，如果有未提交的文件，删除它们
+      if (myUploadFiles.length > 0 && !isPrimaryLeader) {
+        console.log('[装配] 页面退出，清理未提交文件:', myUploadFiles.length, '个');
+        myUploadFiles.forEach(async (file) => {
+          if (file.filename) {
+            try {
+              await fileAPI.deleteFile('assembly', project.id, file.filename, project.projectName);
+              console.log('[装配] 已清理F盘文件:', file.filename);
+            } catch (error) {
+              console.error('[装配] 清理文件失败:', file.filename, error);
+            }
+          }
+        });
+      }
+    };
+  }, [myUploadFiles, isPrimaryLeader, project.id, project.projectName]);
+
   // 合并已提交和未提交的文件用于显示
   const allMyFiles = [
     ...submittedFiles.map(f => ({ ...f, isSubmitted: true })),
     ...myUploadFiles.map(f => ({ ...f, isSubmitted: false }))
   ];
 
-  // 压缩图片
+  // 文件上传辅助函数 - 上传到文件系统
+  const uploadFilesToServer = async (files) => {
+    try {
+      const response = await fileAPI.uploadMultipleFiles(
+        files,
+        project.id,
+        project.projectName,
+        'assembly'
+      );
+      return response.files;
+    } catch (error) {
+      console.error('文件上传失败:', error);
+      throw error;
+    }
+  };
+
+  // 压缩图片（已弃用，改用文件系统上传）
   const compressImage = (file, maxWidth = 1920, quality = 0.8) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -182,15 +218,38 @@ const AssemblyDetailTeam = ({ project, user, onBack }) => {
       return;
     }
     
-    if (window.confirm('确认删除这个文件吗？')) {
-      if (isPrimaryLeader) {
-        const newImages = assemblyImages.filter((_, i) => i !== index);
-        setAssemblyImages(newImages);
-      } else {
-        const newFiles = myUploadFiles.filter((_, i) => i !== index);
-        setMyUploadFiles(newFiles);
-      }
+    // 显示删除中提示
+    const toast = document.createElement('div');
+    toast.textContent = '🗑️ 正在删除...';
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.2s ease-in-out;
+    `;
+    document.body.appendChild(toast);
+    
+    if (isPrimaryLeader) {
+      const newImages = assemblyImages.filter((_, i) => i !== index);
+      setAssemblyImages(newImages);
+    } else {
+      const newFiles = myUploadFiles.filter((_, i) => i !== index);
+      setMyUploadFiles(newFiles);
     }
+    
+    // 1秒后移除提示
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 1000);
   };
 
   // 普通成员提交给主负责人
@@ -315,9 +374,24 @@ const AssemblyDetailTeam = ({ project, user, onBack }) => {
   };
 
   // 渲染文件夹
-  const renderFileFolder = (folderName, displayName, files, icon = '📁', canDelete = false, deleteHandler = null) => {
+  const renderFileFolder = (folderName, displayName, files, icon = '📁', canDelete = false, deleteHandler = null, stage = 'assembly') => {
     const isExpanded = expandedFolders[folderName];
     const fileCount = files ? files.length : 0;
+
+    // 批量下载处理函数
+    const handleDownloadAll = async (e) => {
+      e.stopPropagation(); // 阻止点击事件冒泡到父元素
+      if (fileCount === 0) return;
+      
+      try {
+        console.log('[批量下载] 开始下载:', { stage, displayName, fileCount });
+        await fileAPI.downloadZip(stage, project.id, project.projectName, displayName);
+        console.log('[批量下载] 下载成功');
+      } catch (error) {
+        console.error('[批量下载] 下载失败:', error);
+        alert('批量下载失败：' + error.message);
+      }
+    };
 
     return (
       <div className="file-folder">
@@ -326,10 +400,23 @@ const AssemblyDetailTeam = ({ project, user, onBack }) => {
           onClick={() => toggleFolder(folderName)}
           style={{ cursor: 'pointer' }}
         >
-          <span className="folder-icon">{isExpanded ? '📂' : icon}</span>
-          <span className="folder-name">{displayName}</span>
-          <span className="file-count">({fileCount} 个文件)</span>
-          <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
+          <div className="folder-left">
+            <span className="folder-icon">{isExpanded ? '📂' : icon}</span>
+            <span className="folder-name">{displayName}</span>
+            <span className="file-count">({fileCount} 个文件)</span>
+          </div>
+          <div className="folder-right">
+            {fileCount > 0 && (
+              <button 
+                className="btn-download-all"
+                onClick={handleDownloadAll}
+                title="打包下载全部文件"
+              >
+                📦 下载全部
+              </button>
+            )}
+            <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
+          </div>
         </div>
         
         {isExpanded && (
@@ -337,47 +424,47 @@ const AssemblyDetailTeam = ({ project, user, onBack }) => {
             {fileCount === 0 ? (
               <div className="no-files">暂无文件</div>
             ) : (
-              <div className="file-list-compact">
+              <div className="file-list-simple">
                 {files.map((file, index) => (
-                  <div key={index} className="file-item-compact">
-                    <div 
-                      className="file-preview-compact"
-                      onClick={() => {
-                        const dataUrl = file.url || file.data || file.preview;
-                        setPreviewImage(dataUrl);
-                        setShowImagePreview(true);
-                      }}
-                    >
-                      <div className="file-icon-mini">🖼️</div>
-                      <div className="file-info-compact">
-                        <div className="file-name-compact">{file.name}</div>
-                        <div className="file-meta-compact">
-                          {file.size} · {file.uploadTime ? new Date(file.uploadTime).toLocaleString('zh-CN', { 
-                            month: '2-digit', 
-                            day: '2-digit', 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          }) : ''}
-                          {file.uploadBy && ` · ${file.uploadBy}`}
-                          {file.isSubmitted && <span className="submitted-badge"> · ✅已提交</span>}
-                        </div>
+                  <div 
+                    key={index} 
+                    className="file-item-simple"
+                    onClick={() => {
+                      const dataUrl = file.url || file.data || file.preview;
+                      setPreviewImage(dataUrl);
+                      setShowImagePreview(true);
+                    }}
+                  >
+                    <div className="file-info-simple">
+                      <div className="file-name-simple">
+                        {file.name}
+                        {file.isSubmitted && <span className="submitted-badge"> · ✅已提交</span>}
+                      </div>
+                      <div className="file-meta-simple">
+                        {file.size} · {file.uploadTime ? new Date(file.uploadTime).toLocaleString('zh-CN', { 
+                          month: '2-digit', 
+                          day: '2-digit', 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        }) : ''}
+                        {file.uploadBy && ` · ${file.uploadBy}`}
                       </div>
                     </div>
-                    <div className="file-actions-compact">
+                    <div className="file-actions-simple">
                       <button 
-                        className="btn-action-compact btn-view"
+                        className="btn-action-simple btn-view"
                         onClick={(e) => {
                           e.stopPropagation();
                           const dataUrl = file.url || file.data || file.preview;
                           setPreviewImage(dataUrl);
                           setShowImagePreview(true);
                         }}
-                        title="查看"
+                        title="预览"
                       >
-                        👁️
+                        👁️ 预览
                       </button>
                       <button 
-                        className="btn-action-compact btn-download"
+                        className="btn-action-simple btn-download"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDownloadImage(file);
@@ -503,7 +590,7 @@ const AssemblyDetailTeam = ({ project, user, onBack }) => {
           {renderFileFolder(
             'purchaseSection',
             '采购清单',
-            [...(project.purchaseDocuments || []), ...(project.invoiceDocuments || [])],
+            project.purchaseDocuments || [],
             '🛒'
           )}
 

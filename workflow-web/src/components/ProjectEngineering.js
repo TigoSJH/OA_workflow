@@ -246,25 +246,25 @@ const ProjectEngineering = ({ user, onLogout, activeRole, onRoleSwitch }) => {
             className={`tab ${activeTab === 'all' ? 'active' : ''}`}
             onClick={() => setActiveTab('all')}
           >
-            全部
+            全部 ({stats.total})
           </button>
           <button 
             className={`tab ${activeTab === 'pending' ? 'active' : ''}`}
             onClick={() => setActiveTab('pending')}
           >
-            待处理
+            待处理 ({stats.pending})
           </button>
           <button 
             className={`tab ${activeTab === 'in_progress' ? 'active' : ''}`}
             onClick={() => setActiveTab('in_progress')}
           >
-            进行中
+            进行中 ({stats.inProgress})
           </button>
           <button 
             className={`tab ${activeTab === 'completed' ? 'active' : ''}`}
             onClick={() => setActiveTab('completed')}
           >
-            已完成
+            已完成 ({stats.completed})
           </button>
         </div>
 
@@ -329,33 +329,35 @@ const ProjectEngineering = ({ user, onLogout, activeRole, onRoleSwitch }) => {
       </div>
 
       {/* 通知弹窗 */}
-      <NotificationModal
-        notification={pendingNotification}
-        onView={async (n) => {
-          try {
-            await notificationAPI.markAsRead(n._id);
-          } catch {}
-          setPendingNotification(null);
-          
-          // 找到对应的项目并打开
-          const proj = projects.find(p => String(p.id) === String(n.projectId));
-          if (proj) {
-            setSelectedProject(proj);
-            localStorage.setItem('suppressNotificationProjectId', String(n.projectId));
-          } else {
-            // 项目不存在或尚未下发
-            alert('该项目尚未下发到工程阶段，请稍后查看');
-            // 重新加载项目列表
-            loadProjects();
-          }
-        }}
-        onDismiss={async (n) => {
-          try {
-            await notificationAPI.markAsRead(n._id);
-          } catch {}
-          setPendingNotification(null);
-        }}
-      />
+      {pendingNotification && (
+        <NotificationModal
+          notification={pendingNotification}
+          onView={async (n) => {
+            try {
+              await notificationAPI.markAsRead(n._id);
+            } catch {}
+            setPendingNotification(null);
+            
+            // 找到对应的项目并打开
+            const proj = projects.find(p => String(p.id) === String(n.projectId));
+            if (proj) {
+              setSelectedProject(proj);
+              localStorage.setItem('suppressNotificationProjectId', String(n.projectId));
+            } else {
+              // 项目不存在或尚未下发
+              alert('该项目尚未下发到工程阶段，请稍后查看');
+              // 重新加载项目列表
+              loadProjects();
+            }
+          }}
+          onDismiss={async (n) => {
+            try {
+              await notificationAPI.markAsRead(n._id);
+            } catch {}
+            setPendingNotification(null);
+          }}
+        />
+      )}
 
       {/* 截止日期预警弹窗 */}
       {deadlineWarning && (

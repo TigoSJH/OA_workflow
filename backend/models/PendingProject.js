@@ -37,6 +37,10 @@ const pendingProjectSchema = new mongoose.Schema({
   contractDuration: {
     type: String
   },
+  contractFile: {
+    type: String,  // 合同PDF文件名
+    default: null
+  },
   
   // 通用字段
   budget: {

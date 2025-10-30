@@ -27,8 +27,10 @@ class ApiService {
       'Content-Type': 'application/json',
     };
     
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    // 实时从 localStorage 读取 token，确保使用最新的
+    const currentToken = localStorage.getItem('token');
+    if (currentToken) {
+      headers['Authorization'] = `Bearer ${currentToken}`;
     }
     
     return headers;
@@ -378,24 +380,161 @@ export const fileAPI = {
   // 下载文件
   downloadFile: async (stage, projectId, filename, projectName = '') => {
     const api = new ApiService();
-    const baseURL = api.baseURL.replace('/api', '');
     const queryParams = new URLSearchParams({ projectName });
-    const url = `${baseURL}/api/files/download/${stage}/${projectId}/${filename}?${queryParams.toString()}`;
-    window.open(url, '_blank');
+    const safeFilename = encodeURIComponent(filename);
+    const url = `/files/download/${stage}/${projectId}/${safeFilename}?${queryParams.toString()}`;
+    
+    try {
+      const response = await api.downloadFile(url);
+      
+      // 从响应头获取文件名
+      const contentDisposition = response.headers.get('content-disposition');
+      let downloadFilename = filename;
+      if (contentDisposition) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+        if (matches != null && matches[1]) {
+          downloadFilename = matches[1].replace(/['"]/g, '');
+        }
+      }
+      
+      // 获取blob数据
+      const blob = await response.blob();
+      
+      // 创建下载链接
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = downloadFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // 释放URL对象
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+    } catch (error) {
+      console.error('下载文件失败:', error);
+      throw error;
+    }
+  },
+
+  // 批量下载文件夹（打包为zip）
+  downloadZip: async (stage, projectId, projectName = '', folderName = '') => {
+    const api = new ApiService();
+    const queryParams = new URLSearchParams({ projectName, folderName });
+    const url = `/files/download-zip/${stage}/${projectId}?${queryParams.toString()}`;
+    
+    try {
+      const response = await api.downloadFile(url);
+      
+      // 从响应头获取文件名
+      const contentDisposition = response.headers.get('content-disposition');
+      let downloadFilename = `${folderName || stage}_files.zip`;
+      if (contentDisposition) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+        if (matches != null && matches[1]) {
+          downloadFilename = matches[1].replace(/['"]/g, '');
+        }
+      }
+      
+      // 获取blob数据
+      const blob = await response.blob();
+      
+      // 创建下载链接
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = downloadFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // 释放URL对象
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+    } catch (error) {
+      console.error('批量下载失败:', error);
+      throw error;
+    }
   },
 
   // 查看/预览文件
   viewFile: (stage, projectId, filename, projectName = '') => {
     const api = new ApiService();
-    const baseURL = api.baseURL.replace('/api', '');
     const queryParams = new URLSearchParams({ projectName });
-    return `${baseURL}/api/files/view/${stage}/${projectId}/${filename}?${queryParams.toString()}`;
+    const safeFilename = encodeURIComponent(filename);
+    return `${api.baseURL}/files/view/${stage}/${projectId}/${safeFilename}?${queryParams.toString()}`;
   },
 
   // 删除文件
-  deleteFile: async (stage, projectId, filename) => {
+  deleteFile: async (stage, projectId, filename, projectName = '') => {
     const api = new ApiService();
-    return api.delete(`/files/${stage}/${projectId}/${filename}`);
+    const queryParams = new URLSearchParams({ projectName });
+    return api.delete(`/files/${stage}/${projectId}/${filename}?${queryParams.toString()}`);
+  },
+
+  // 复制文件到新阶段（推送时使用）
+  copyToStage: async (projectId, projectName, files, fromStage, toStage) => {
+    const api = new ApiService();
+    return api.post('/files/copy-to-stage', {
+      projectId,
+      projectName,
+      files,
+      fromStage,
+      toStage
+    });
+  },
+
+  // 上传合同文件
+  uploadContractFile: async (file, projectId, projectName) => {
+    const api = new ApiService();
+    const formData = new FormData();
+    formData.append('contract', file);
+    
+    const queryParams = new URLSearchParams({ projectId, projectName });
+    return api.uploadFile(`/files/upload-contract?${queryParams.toString()}`, formData);
+  },
+
+  // 下载合同文件
+  downloadContract: async (projectId, filename, projectName = '') => {
+    const api = new ApiService();
+    const safeFilename = encodeURIComponent(filename);
+    const queryParams = new URLSearchParams({ projectName });
+    const url = `/files/download-contract/${projectId}/${safeFilename}?${queryParams.toString()}`;
+    
+    try {
+      const response = await api.downloadFile(url);
+      
+      // 从响应头获取文件名
+      const contentDisposition = response.headers.get('content-disposition');
+      let downloadFilename = filename;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          downloadFilename = filenameMatch[1].replace(/['"]/g, '');
+        }
+      }
+      
+      // 创建下载链接
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = downloadFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('下载合同失败:', error);
+      throw error;
+    }
+  },
+
+  // 预览合同文件
+  viewContract: (projectId, filename, projectName = '') => {
+    const api = new ApiService();
+    const safeFilename = encodeURIComponent(filename);
+    const queryParams = new URLSearchParams({ projectName });
+    return `${api.baseURL}/files/view-contract/${projectId}/${safeFilename}?${queryParams.toString()}`;
   }
 };
 

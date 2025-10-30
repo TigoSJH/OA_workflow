@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './ProjectInitiation.css';
 import ProjectDetail from './ProjectDetail';
 import RoleBadges from './RoleBadges';
-import { projectAPI } from '../services/api';
+import { projectAPI, fileAPI } from '../services/api';
 
 const ProjectInitiation = ({ user, onLogout, onSwitchToDevelopment, onSwitchToScheduleManagement, onSwitchToArchive, openProjectId, onProjectOpened, activeRole, onRoleSwitch }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -24,12 +24,15 @@ const ProjectInitiation = ({ user, onLogout, onSwitchToDevelopment, onSwitchToSc
     budget: '',
     duration: '',
     priority: 'normal',
+    // 合同立项字段
+    contractFile: null, // 合同PDF文件
   });
 
   // 项目数据
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState({ show: false, message: '' });
 
   // 加载项目数据
   useEffect(() => {
@@ -92,23 +95,40 @@ const ProjectInitiation = ({ user, onLogout, onSwitchToDevelopment, onSwitchToSc
     return true;
   });
 
+  const showToast = (message) => {
+    setToast({ show: true, message });
+    setTimeout(() => {
+      setToast({ show: false, message: '' });
+    }, 1000);
+  };
+
   const handleCreateProject = async () => {
     if (!newProject.projectName || !newProject.description) {
-      console.warn('请填写项目名称和描述');
+      showToast('⚠️ 请填写项目名称和描述');
       return;
     }
 
     // 研发立项的必填项验证
     if (newProject.type === 'research') {
       if (!newProject.researchDirection || !newProject.researchPurpose) {
-        console.warn('请填写研发方向和研发用途');
+        showToast('⚠️ 请填写研发方向和研发用途');
+        return;
+      }
+    }
+
+    // 合同立项的必填项验证
+    if (newProject.type === 'contract') {
+      if (!newProject.contractFile) {
+        showToast('⚠️ 请上传合同文件（PDF格式）');
         return;
       }
     }
 
     try {
       setLoading(true);
+      showToast('📤 正在创建...');
       
+      // 先创建项目（不包含合同文件）
       const projectData = {
         projectName: newProject.projectName,
         projectType: newProject.type,
@@ -124,9 +144,36 @@ const ProjectInitiation = ({ user, onLogout, onSwitchToDevelopment, onSwitchToSc
         // 合同立项字段
         contractAmount: newProject.budget,
         contractDuration: newProject.duration,
+        contractFile: null, // 暂时为null
       };
 
-      await projectAPI.createProject(projectData);
+      const createResult = await projectAPI.createProject(projectData);
+      const createdProjectId = createResult.project?.id || createResult.project?._id;
+      
+      console.log('项目创建成功，ID:', createdProjectId);
+      
+      // 如果是合同立项，上传合同文件到项目专属文件夹
+      if (newProject.type === 'contract' && newProject.contractFile && createdProjectId) {
+        console.log('正在上传合同文件到项目文件夹...');
+        try {
+          const uploadResult = await fileAPI.uploadContractFile(
+            newProject.contractFile,
+            createdProjectId,
+            newProject.projectName
+          );
+          const contractFileName = uploadResult.filename;
+          console.log('合同文件上传成功:', contractFileName);
+          
+          // 更新项目的contractFile字段
+          await projectAPI.updateProject(createdProjectId, {
+            contractFile: contractFileName
+          });
+          console.log('项目contractFile字段已更新');
+        } catch (uploadError) {
+          console.error('合同文件上传失败:', uploadError);
+          alert('项目已创建，但合同文件上传失败：' + uploadError.message);
+        }
+      }
       
       setShowCreateForm(false);
       setNewProject({
@@ -139,12 +186,14 @@ const ProjectInitiation = ({ user, onLogout, onSwitchToDevelopment, onSwitchToSc
         budget: '',
         duration: '',
         priority: 'normal',
+        contractFile: null,
       });
       
-      console.log('立项申请已提交');
+      showToast('✅ 立项申请已提交');
       loadProjects(); // 重新加载项目列表
     } catch (error) {
       console.error('提交立项申请失败:', error.message);
+      showToast('❌ 提交失败：' + error.message);
     } finally {
       setLoading(false);
     }
@@ -301,25 +350,25 @@ const ProjectInitiation = ({ user, onLogout, onSwitchToDevelopment, onSwitchToSc
             className={`tab ${activeTab === 'all' ? 'active' : ''}`}
             onClick={() => setActiveTab('all')}
           >
-            全部
+            全部 ({stats.total})
           </button>
           <button 
             className={`tab ${activeTab === 'pending' ? 'active' : ''}`}
             onClick={() => setActiveTab('pending')}
           >
-            {currentRole === 'researcher' ? '待评估' : '待审批'}
+            {currentRole === 'researcher' ? '待评估' : '待审批'} ({stats.pending})
           </button>
           <button 
             className={`tab ${activeTab === 'approved' ? 'active' : ''}`}
             onClick={() => setActiveTab('approved')}
           >
-            {currentRole === 'researcher' ? '已立项' : '已批准'}
+            {currentRole === 'researcher' ? '已立项' : '已批准'} ({stats.approved})
           </button>
           <button 
             className={`tab ${activeTab === 'rejected' ? 'active' : ''}`}
             onClick={() => setActiveTab('rejected')}
           >
-            {currentRole === 'researcher' ? '已驳回' : '已拒绝'}
+            {currentRole === 'researcher' ? '已驳回' : '已拒绝'} ({stats.rejected})
           </button>
         </div>
 
@@ -479,9 +528,67 @@ const ProjectInitiation = ({ user, onLogout, onSwitchToDevelopment, onSwitchToSc
             {/* 合同立项特有字段 */}
             {newProject.type === 'contract' && (
               <>
+                <div className="form-group">
+                  <label>合同文件 * (仅支持PDF格式)</label>
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        if (file.type !== 'application/pdf') {
+                          alert('请上传PDF格式的合同文件');
+                          e.target.value = '';
+                          return;
+                        }
+                        if (file.size > 20 * 1024 * 1024) {
+                          alert('文件大小不能超过20MB');
+                          e.target.value = '';
+                          return;
+                        }
+                        setNewProject({...newProject, contractFile: file});
+                      }
+                    }}
+                    style={{
+                      padding: '8px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      width: '100%'
+                    }}
+                  />
+                  {newProject.contractFile && (
+                    <div style={{
+                      marginTop: '8px',
+                      padding: '8px',
+                      background: '#f0f9ff',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <span>📄</span>
+                      <span style={{ flex: 1, fontSize: '14px' }}>
+                        {newProject.contractFile.name} ({(newProject.contractFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setNewProject({...newProject, contractFile: null})}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#ef4444',
+                          cursor: 'pointer',
+                          fontSize: '18px'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <div className="form-row">
                   <div className="form-group">
-                    <label>项目预算</label>
+                    <label>合同金额</label>
                     <div className="input-with-unit">
                       <input
                         type="number"
@@ -495,7 +602,7 @@ const ProjectInitiation = ({ user, onLogout, onSwitchToDevelopment, onSwitchToSc
                     </div>
                   </div>
                   <div className="form-group">
-                    <label>项目时间</label>
+                    <label>合同周期</label>
                     <div className="input-with-unit">
                       <input
                         type="number"
@@ -508,12 +615,6 @@ const ProjectInitiation = ({ user, onLogout, onSwitchToDevelopment, onSwitchToSc
                       <span className="unit-label">月</span>
                     </div>
                   </div>
-                </div>
-                <div className="form-notice">
-                  <span className="notice-icon">ℹ️</span>
-                  <span className="notice-text">
-                    合同PDF文档可在立项批准后，在详情页中上传
-                  </span>
                 </div>
               </>
             )}
@@ -533,6 +634,27 @@ const ProjectInitiation = ({ user, onLogout, onSwitchToDevelopment, onSwitchToSc
               <button className="primary" onClick={handleCreateProject}>提交申请</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast 提示 */}
+      {toast.show && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(0, 0, 0, 0.85)',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          fontSize: '16px',
+          fontWeight: '500',
+          zIndex: 10000,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+          animation: 'fadeIn 0.2s ease-in-out'
+        }}>
+          {toast.message}
         </div>
       )}
     </div>

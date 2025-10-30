@@ -296,33 +296,35 @@ const ProjectPurchase = ({ user, onLogout, activeRole, onRoleSwitch }) => {
       </div>
 
       {/* 通知弹窗 */}
-      <NotificationModal
-        notification={pendingNotification}
-        onView={async (n) => {
-          try {
-            await notificationAPI.markAsRead(n._id);
-          } catch {}
-          setPendingNotification(null);
-          
-          // 找到对应的项目并打开详情页
-          const proj = projects.find(p => String(p.id) === String(n.projectId));
-          if (proj) {
-            // 项目已下发，打开详情页
-            localStorage.setItem('suppressNotificationProjectId', String(n.projectId));
-            setSelectedProject(proj);
-          } else {
-            // 项目不存在或尚未下发，重新加载项目列表
-            console.log('项目尚未下发到采购阶段');
-            loadProjects();
-          }
-        }}
-        onDismiss={async (n) => {
-          try {
-            await notificationAPI.markAsRead(n._id);
-          } catch {}
-          setPendingNotification(null);
-        }}
-      />
+      {pendingNotification && (
+        <NotificationModal
+          notification={pendingNotification}
+          onView={async (n) => {
+            try {
+              await notificationAPI.markAsRead(n._id);
+            } catch {}
+            setPendingNotification(null);
+            
+            // 找到对应的项目并打开详情页
+            const proj = projects.find(p => String(p.id) === String(n.projectId));
+            if (proj) {
+              // 项目已下发，打开详情页
+              localStorage.setItem('suppressNotificationProjectId', String(n.projectId));
+              setSelectedProject(proj);
+            } else {
+              // 项目不存在或尚未下发，重新加载项目列表
+              console.log('项目尚未下发到采购阶段');
+              loadProjects();
+            }
+          }}
+          onDismiss={async (n) => {
+            try {
+              await notificationAPI.markAsRead(n._id);
+            } catch {}
+            setPendingNotification(null);
+          }}
+        />
+      )}
 
       {/* 截止日期预警 */}
       <DeadlineWarningModal

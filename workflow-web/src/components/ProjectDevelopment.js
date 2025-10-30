@@ -233,19 +233,19 @@ const ProjectDevelopment = ({ user, onLogout, onSwitchToInitiation, activeRole, 
             className={`tab ${activeTab === 'all' ? 'active' : ''}`}
             onClick={() => setActiveTab('all')}
           >
-            全部
+            全部 ({stats.total})
           </button>
           <button 
             className={`tab ${activeTab === 'in_development' ? 'active' : ''}`}
             onClick={() => setActiveTab('in_development')}
           >
-            开发中
+            开发中 ({stats.inDevelopment})
           </button>
           <button 
             className={`tab ${activeTab === 'completed' ? 'active' : ''}`}
             onClick={() => setActiveTab('completed')}
           >
-            已完成
+            已完成 ({stats.completed})
           </button>
         </div>
 

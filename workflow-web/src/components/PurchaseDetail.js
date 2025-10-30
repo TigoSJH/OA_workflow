@@ -120,18 +120,102 @@ const PurchaseDetail = ({ project, user, onBack }) => {
   };
 
   // 删除采购清单图片
-  const handleDeletePurchaseDocument = (index) => {
-    if (window.confirm('确认删除这个文件吗？')) {
+  const handleDeletePurchaseDocument = async (index) => {
+    try {
+      // 显示删除中提示
+      const toast = document.createElement('div');
+      toast.textContent = '🗑️ 正在删除...';
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        animation: fadeIn 0.2s ease-in-out;
+      `;
+      document.body.appendChild(toast);
+      
+      const fileToDelete = purchaseDocuments[index];
       const newDocs = purchaseDocuments.filter((_, i) => i !== index);
+      
+      // 删除服务器上的文件
+      if (fileToDelete.filename) {
+        await fileAPI.deleteFile('purchase', project.id, fileToDelete.filename, project.projectName);
+      }
+      
+      // 更新数据库
+      await projectAPI.updateProject(project.id, {
+        purchaseDocuments: newDocs,
+        invoiceDocuments: invoiceDocuments
+      });
+      
+      // 更新本地状态
       setPurchaseDocuments(newDocs);
+      
+      // 1秒后移除提示
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 1000);
+    } catch (error) {
+      console.error('删除失败:', error);
+      alert('删除失败：' + error.message);
     }
   };
 
   // 删除发票图片
-  const handleDeleteInvoiceDocument = (index) => {
-    if (window.confirm('确认删除这个文件吗？')) {
+  const handleDeleteInvoiceDocument = async (index) => {
+    try {
+      // 显示删除中提示
+      const toast = document.createElement('div');
+      toast.textContent = '🗑️ 正在删除...';
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        animation: fadeIn 0.2s ease-in-out;
+      `;
+      document.body.appendChild(toast);
+      
+      const fileToDelete = invoiceDocuments[index];
       const newDocs = invoiceDocuments.filter((_, i) => i !== index);
+      
+      // 删除服务器上的文件
+      if (fileToDelete.filename) {
+        await fileAPI.deleteFile('purchase', project.id, fileToDelete.filename, project.projectName);
+      }
+      
+      // 更新数据库
+      await projectAPI.updateProject(project.id, {
+        purchaseDocuments: purchaseDocuments,
+        invoiceDocuments: newDocs
+      });
+      
+      // 更新本地状态
       setInvoiceDocuments(newDocs);
+      
+      // 1秒后移除提示
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 1000);
+    } catch (error) {
+      console.error('删除失败:', error);
+      alert('删除失败：' + error.message);
     }
   };
 
@@ -171,27 +255,44 @@ const PurchaseDetail = ({ project, user, onBack }) => {
     }
   };
 
-  // 下载图片
-  // 处理图片预览
-  const handleImagePreview = (imageData) => {
-    // 如果是新文件系统（有filename），使用API预览
-    if (imageData.filename) {
-      const viewUrl = fileAPI.viewFile('purchase', project.id, imageData.filename, project.projectName);
-      setPreviewImage(viewUrl);
-    } else {
-      // 兼容旧的Base64数据
-      const dataUrl = imageData.url || imageData.data || imageData.preview;
-      setPreviewImage(dataUrl);
+  // 处理图片预览（支持指定stage）
+  const handleImagePreview = async (imageData, stage = 'purchase') => {
+    try {
+      // 如果是新文件系统（有filename），使用fetch获取并转换为blob URL
+      if (imageData.filename) {
+        console.log('[采购预览] stage:', stage, 'filename:', imageData.filename);
+        const viewUrl = fileAPI.viewFile(stage, project.id, imageData.filename, project.projectName);
+        const response = await fetch(viewUrl, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`无法加载图片 (HTTP ${response.status})`);
+        }
+        
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        setPreviewImage(blobUrl);
+      } else {
+        // 兼容旧的Base64数据
+        const dataUrl = imageData.url || imageData.data || imageData.preview;
+        setPreviewImage(dataUrl);
+      }
+      setShowImagePreview(true);
+    } catch (error) {
+      console.error('[采购预览] 失败:', error);
+      alert('预览失败：' + error.message);
     }
-    setShowImagePreview(true);
   };
 
-  // 下载图片
-  const handleDownloadImage = async (imageData) => {
+  // 下载图片（支持指定stage）
+  const handleDownloadImage = async (imageData, stage = 'purchase') => {
     try {
       // 如果是新文件系统（有filename），使用API下载
       if (imageData.filename) {
-        await fileAPI.downloadFile('purchase', project.id, imageData.filename, project.projectName);
+        await fileAPI.downloadFile(stage, project.id, imageData.filename, project.projectName);
       } else {
         // 兼容旧的Base64数据
         const dataUrl = imageData.url || imageData.data || imageData.preview;
@@ -212,10 +313,25 @@ const PurchaseDetail = ({ project, user, onBack }) => {
     }
   };
 
-  // 渲染文件夹（通用）
-  const renderFileFolder = (folderName, displayName, files, icon = '📁', canDelete = false) => {
+  // 渲染文件夹（通用，支持指定stage）
+  const renderFileFolder = (folderName, displayName, files, icon = '📁', canDelete = false, stage = 'purchase') => {
     const isExpanded = expandedFolders[folderName];
     const fileCount = files ? files.length : 0;
+
+    // 批量下载处理函数
+    const handleDownloadAll = async (e) => {
+      e.stopPropagation(); // 阻止点击事件冒泡到父元素
+      if (fileCount === 0) return;
+      
+      try {
+        console.log('[批量下载] 开始下载:', { stage, displayName, fileCount });
+        await fileAPI.downloadZip(stage, project.id, project.projectName, displayName);
+        console.log('[批量下载] 下载成功');
+      } catch (error) {
+        console.error('[批量下载] 下载失败:', error);
+        alert('批量下载失败：' + error.message);
+      }
+    };
 
     return (
       <div className="file-folder">
@@ -224,10 +340,23 @@ const PurchaseDetail = ({ project, user, onBack }) => {
           onClick={() => toggleFolder(folderName)}
           style={{ cursor: 'pointer' }}
         >
-          <span className="folder-icon">{isExpanded ? '📂' : icon}</span>
-          <span className="folder-name">{displayName}</span>
-          <span className="file-count">({fileCount} 个文件)</span>
-          <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
+          <div className="folder-left">
+            <span className="folder-icon">{isExpanded ? '📂' : icon}</span>
+            <span className="folder-name">{displayName}</span>
+            <span className="file-count">({fileCount} 个文件)</span>
+          </div>
+          <div className="folder-right">
+            {fileCount > 0 && (
+              <button 
+                className="btn-download-all"
+                onClick={handleDownloadAll}
+                title="打包下载全部文件"
+              >
+                📦 下载全部
+              </button>
+            )}
+            <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
+          </div>
         </div>
         
         {isExpanded && (
@@ -235,51 +364,49 @@ const PurchaseDetail = ({ project, user, onBack }) => {
             {fileCount === 0 ? (
               <div className="no-files">暂无文件</div>
             ) : (
-              <div className="file-list-compact">
+              <div className="file-list-simple">
                 {files.map((file, index) => (
-                  <div key={index} className="file-item-compact">
-                    <div 
-                      className="file-preview-compact"
-                      onClick={() => handleImagePreview(file)}
-                    >
-                      <div className="file-icon-mini">🖼️</div>
-                      <div className="file-info-compact">
-                        <div className="file-name-compact">{file.name}</div>
-                        <div className="file-meta-compact">
-                          {file.size} · {file.uploadTime ? new Date(file.uploadTime).toLocaleString('zh-CN', { 
-                            month: '2-digit', 
-                            day: '2-digit', 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          }) : ''}
-                          {file.uploadBy && ` · ${file.uploadBy}`}
-                        </div>
+                  <div 
+                    key={index} 
+                    className="file-item-simple"
+                    onClick={() => handleImagePreview(file, stage)}
+                  >
+                    <div className="file-info-simple">
+                      <div className="file-name-simple">{file.name}</div>
+                      <div className="file-meta-simple">
+                        {file.size} · {file.uploadTime ? new Date(file.uploadTime).toLocaleString('zh-CN', { 
+                          month: '2-digit', 
+                          day: '2-digit', 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        }) : ''}
+                        {file.uploadBy && ` · ${file.uploadBy}`}
                       </div>
                     </div>
-                    <div className="file-actions-compact">
+                    <div className="file-actions-simple">
                       <button 
-                        className="btn-action-compact btn-view"
+                        className="btn-action-simple btn-view"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleImagePreview(file);
+                          handleImagePreview(file, stage);
                         }}
-                        title="查看"
+                        title="预览"
                       >
-                        👁️
+                        👁️ 预览
                       </button>
                       <button 
-                        className="btn-action-compact btn-download"
+                        className="btn-action-simple btn-download"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDownloadImage(file);
+                          handleDownloadImage(file, stage);
                         }}
                         title="下载"
                       >
-                        ⬇️
+                        ⬇️ 下载
                       </button>
                       {canDelete && !isCompleted && (
                         <button 
-                          className="btn-action-compact btn-delete"
+                          className="btn-action-simple btn-delete"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeletePurchaseDocument(index);
@@ -320,8 +447,8 @@ const PurchaseDetail = ({ project, user, onBack }) => {
         </div>
         {isExpanded && (
           <div className="folder-content">
-            {renderFileFolder('purchaseListSub', '采购清单图片', purchaseDocuments, '📃', true)}
-            {renderFileFolder('invoiceListSub', '发票图片', invoiceDocuments, '🧾', true)}
+            {renderFileFolder('purchaseListSub', '采购清单图片', purchaseDocuments, '📃', true, 'purchase')}
+            {renderFileFolder('invoiceListSub', '发票图片', invoiceDocuments, '🧾', true, 'purchase')}
           </div>
         )}
       </div>
@@ -411,7 +538,9 @@ const PurchaseDetail = ({ project, user, onBack }) => {
             project.developmentDrawings && project.developmentDrawings.length > 0
               ? project.developmentDrawings
               : ([...(project.folderScreenshots || []), ...(project.drawingImages || [])]),
-            '📊'
+            '📊',
+            false,
+            'development'
           )}
 
           {/* 工程图纸文件夹 */}
@@ -419,7 +548,9 @@ const PurchaseDetail = ({ project, user, onBack }) => {
             'engSection',
             '工程图纸',
             [...(project.engineeringDrawings || []), ...(project.engineeringDocuments || [])],
-            '🛠️'
+            '🛠️',
+            false,
+            'engineering'
           )}
         </div>
 

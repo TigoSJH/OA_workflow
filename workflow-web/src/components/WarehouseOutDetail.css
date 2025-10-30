@@ -4,7 +4,7 @@
   padding-bottom: 80px;
 }
 
-/* Loading覆盖�?*/
+/* Loading覆盖�?*/
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -213,7 +213,7 @@
   line-height: 1.6;
 }
 
-/* 文件上传�?*/
+/* 文件上传�?*/
 .file-subsection {
   padding: 16px;
   margin-bottom: 24px;
@@ -430,7 +430,7 @@
   font-size: 14px;
 }
 
-/* 完成状�?*/
+/* 完成状�?*/
 .completion-info {
   padding: 16px;
   background: transparent !important;
@@ -500,7 +500,7 @@
   margin-bottom: 0;
 }
 
-/* 推送按钮区�?*/
+/* 推送按钮区�?*/
 .push-section {
   background: white;
   border-radius: 12px;
@@ -821,7 +821,7 @@
   transform: translateY(0);
 }
 
-/* 文件夹样�?*/
+/* 文件夹样�?*/
 .file-folder-container {
   margin: 16px 0;
   border: 1px solid #e1e8ed;
@@ -855,7 +855,7 @@
   filter: none;
 }
 
-/* 嵌套文件夹容�?*/
+/* 嵌套文件夹容�?*/
 .nested-folders {
   padding: 12px 12px 12px 48px;
   background: #f8f9fa;
@@ -921,6 +921,39 @@
   align-items: center;
   gap: 10px;
   flex: 1;
+}
+
+.folder-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-download-all {
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.btn-download-all:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.btn-download-all:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
 }
 
 .folder-arrow {
@@ -1154,7 +1187,7 @@
   font-style: italic;
 }
 
-/* 响应式设�?*/
+/* 响应式设�?*/
 @media (max-width: 768px) {
   .info-grid {
     grid-template-columns: 1fr;
@@ -1200,7 +1233,7 @@
     margin-right: 0;
   }
   
-  /* 增强移动端样�?*/
+  /* 增强移动端样�?*/
   .warehouseout-detail-header {
     padding: 16px 20px;
   }
@@ -1318,7 +1351,7 @@
     font-size: 14px;
   }
   
-  /* 模态框移动端优�?*/
+  /* 模态框移动端优�?*/
   .image-modal {
     padding: 20px;
   }
@@ -1449,4 +1482,97 @@
   }
 }
 
+/* 简洁文件列表样式 */
+.file-list-simple {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-item-simple {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.file-item-simple:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateX(2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.file-info-simple {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.file-name-simple {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-meta-simple {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.file-actions-simple {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-action-simple {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-action-simple.btn-view {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-action-simple.btn-view:hover {
+  background: #2563eb;
+  transform: scale(1.05);
+}
+
+.btn-action-simple.btn-download {
+  background: #10b981;
+  color: white;
+}
+
+.btn-action-simple.btn-download:hover {
+  background: #059669;
+  transform: scale(1.05);
+}
+
+.btn-action-simple.btn-delete {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-action-simple.btn-delete:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
 
