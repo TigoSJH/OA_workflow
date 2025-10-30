@@ -27,13 +27,37 @@ const storage = multer.diskStorage({
       // 老规则：使用 项目ID_项目名称（若无项目名称则仅用项目ID）
       const folderName = safeName ? `${projectId}_${safeName}` : projectId;
       
-      // 构建路径: F:\OA_Files\{stage}\{projectName}\
-      const uploadPath = path.join(BASE_UPLOAD_PATH, stage, folderName);
+      let uploadPath;
+      
+      // 特殊处理 warehouseIn 阶段
+      if (stage === 'warehouseIn') {
+        const warehouseType = req.query.warehouseType || req.body.warehouseType || 'first'; // first or second
+        const componentType = req.query.componentType || req.body.componentType || ''; // purchase or processing
+        
+        // 构建路径: F:\OA_Files\warehouseIn\{projectId_projectName}\第一次入库\ 或 第二次入库\
+        const warehouseFolder = warehouseType === 'first' ? '第一次入库' : '第二次入库';
+        
+        if (warehouseType === 'first' && componentType) {
+          // 第一次入库需要再分零部件和加工件
+          const subFolder = componentType === 'purchase' ? '零部件' : '加工件';
+          uploadPath = path.join(BASE_UPLOAD_PATH, stage, folderName, warehouseFolder, subFolder);
+        } else {
+          // 第二次入库直接放在 第二次入库 文件夹下
+          uploadPath = path.join(BASE_UPLOAD_PATH, stage, folderName, warehouseFolder);
+        }
+        
+        console.log('[upload.destination][warehouseIn]', { 
+          stage, projectId, projectName, folderName, 
+          warehouseType, componentType, uploadPath 
+        });
+      } else {
+        // 其他阶段使用原来的逻辑
+        uploadPath = path.join(BASE_UPLOAD_PATH, stage, folderName);
+        console.log('[upload.destination][other-stage]', { stage, projectId, projectName, folderName, uploadPath });
+      }
       
       // 确保目录存在
       ensureDirExists(uploadPath);
-      
-      console.log('[upload.destination][old-rule]', { stage, projectId, projectName, folderName, uploadPath });
 
       cb(null, uploadPath);
     } catch (error) {
@@ -118,7 +142,8 @@ const generateFolderName = (projectId, projectName) => {
 };
 
 // 查找文件夹（优先新规则：项目名称；兼容旧规则：项目ID_项目名称、仅项目ID）
-const findFolderPath = (stage, projectId, projectName) => {
+// 新增：支持 warehouseIn 阶段的特殊路径参数
+const findFolderPath = (stage, projectId, projectName, options = {}) => {
   const fs = require('fs');
   const path = require('path');
 
@@ -126,9 +151,29 @@ const findFolderPath = (stage, projectId, projectName) => {
   console.log('stage:', stage);
   console.log('projectId:', projectId);
   console.log('projectName:', projectName);
+  console.log('options:', options);
 
   const safeName = (projectName || '').replace(/[<>:"/\\|?*]/g, '_').trim();
 
+  // 特殊处理 warehouseIn 阶段
+  if (stage === 'warehouseIn') {
+    const { warehouseType = 'first', componentType = '' } = options;
+    const folderName = safeName ? `${projectId}_${safeName}` : projectId;
+    const warehouseFolder = warehouseType === 'first' ? '第一次入库' : '第二次入库';
+    
+    let targetPath;
+    if (warehouseType === 'first' && componentType) {
+      const subFolder = componentType === 'purchase' ? '零部件' : '加工件';
+      targetPath = path.join(BASE_UPLOAD_PATH, stage, folderName, warehouseFolder, subFolder);
+    } else {
+      targetPath = path.join(BASE_UPLOAD_PATH, stage, folderName, warehouseFolder);
+    }
+    
+    console.log('✓ warehouseIn 特殊路径:', targetPath);
+    return targetPath;
+  }
+
+  // 其他阶段使用原来的逻辑
   // 1) 新规则：只用项目名称
   if (safeName) {
     const newPath = path.join(BASE_UPLOAD_PATH, stage, safeName);

@@ -94,12 +94,15 @@ router.get('/download/:stage/:projectId/:filename', auth, (req, res) => {
   try {
     const { stage, projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
+    const warehouseType = req.query.warehouseType || 'first';
+    const componentType = req.query.componentType || '';
     
     // 使用findFolderPath查找实际文件夹路径
-    const folderPath = findFolderPath(stage, projectId, projectName);
+    const options = { warehouseType, componentType };
+    const folderPath = findFolderPath(stage, projectId, projectName, options);
     const filePath = path.join(folderPath, filename);
 
-    console.log('下载文件请求:', { stage, projectId, projectName, filename });
+    console.log('下载文件请求:', { stage, projectId, projectName, filename, warehouseType, componentType });
     console.log('文件路径:', filePath);
 
     if (!fs.existsSync(filePath)) {
@@ -119,12 +122,15 @@ router.get('/view/:stage/:projectId/:filename', auth, (req, res) => {
   try {
     const { stage, projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
+    const warehouseType = req.query.warehouseType || 'first';
+    const componentType = req.query.componentType || '';
     
     // 使用findFolderPath查找实际文件夹路径
-    const folderPath = findFolderPath(stage, projectId, projectName);
+    const options = { warehouseType, componentType };
+    const folderPath = findFolderPath(stage, projectId, projectName, options);
     const filePath = path.join(folderPath, filename);
 
-    console.log('预览文件请求:', { stage, projectId, projectName, filename });
+    console.log('预览文件请求:', { stage, projectId, projectName, filename, warehouseType, componentType });
     console.log('文件路径:', filePath);
 
     if (!fs.existsSync(filePath)) {
@@ -144,12 +150,15 @@ router.delete('/:stage/:projectId/:filename', auth, async (req, res) => {
   try {
     const { stage, projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
+    const warehouseType = req.query.warehouseType || 'first';
+    const componentType = req.query.componentType || '';
     
     // 使用findFolderPath查找实际文件夹路径
-    const folderPath = findFolderPath(stage, projectId, projectName);
+    const options = { warehouseType, componentType };
+    const folderPath = findFolderPath(stage, projectId, projectName, options);
     const filePath = path.join(folderPath, filename);
 
-    console.log('删除文件请求:', { stage, projectId, projectName, filename });
+    console.log('删除文件请求:', { stage, projectId, projectName, filename, warehouseType, componentType });
     console.log('文件路径:', filePath);
 
     if (!fs.existsSync(filePath)) {
@@ -174,9 +183,12 @@ router.get('/list/:stage/:projectId', auth, (req, res) => {
   try {
     const { stage, projectId } = req.params;
     const projectName = req.query.projectName || '';
+    const warehouseType = req.query.warehouseType || 'first';
+    const componentType = req.query.componentType || '';
     
     // 使用findFolderPath查找实际文件夹路径
-    const folderPath = findFolderPath(stage, projectId, projectName);
+    const options = { warehouseType, componentType };
+    const folderPath = findFolderPath(stage, projectId, projectName, options);
 
     if (!fs.existsSync(folderPath)) {
       return res.json({ files: [] });

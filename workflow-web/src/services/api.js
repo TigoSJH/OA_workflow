@@ -356,7 +356,7 @@ export const fileAPI = {
   },
 
   // 批量上传文件到文件系统
-  uploadMultipleFiles: async (files, projectId, projectName, stage = 'other') => {
+  uploadMultipleFiles: async (files, projectId, projectName, stage = 'other', options = {}) => {
     const api = new ApiService();
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
@@ -368,6 +368,14 @@ export const fileAPI = {
       stage: stage
     });
     
+    // 添加入库特殊参数
+    if (stage === 'warehouseIn' && options.warehouseType) {
+      queryParams.append('warehouseType', options.warehouseType);
+    }
+    if (stage === 'warehouseIn' && options.componentType) {
+      queryParams.append('componentType', options.componentType);
+    }
+    
     return api.uploadFile(`/files/upload-multiple?${queryParams.toString()}`, formData);
   },
 
@@ -378,9 +386,16 @@ export const fileAPI = {
   },
 
   // 下载文件
-  downloadFile: async (stage, projectId, filename, projectName = '') => {
+  downloadFile: async (stage, projectId, filename, projectName = '', options = {}) => {
     const api = new ApiService();
     const queryParams = new URLSearchParams({ projectName });
+    
+    // 添加入库特殊参数
+    if (stage === 'warehouseIn') {
+      if (options.warehouseType) queryParams.append('warehouseType', options.warehouseType);
+      if (options.componentType) queryParams.append('componentType', options.componentType);
+    }
+    
     const safeFilename = encodeURIComponent(filename);
     const url = `/files/download/${stage}/${projectId}/${safeFilename}?${queryParams.toString()}`;
     
@@ -457,17 +472,31 @@ export const fileAPI = {
   },
 
   // 查看/预览文件
-  viewFile: (stage, projectId, filename, projectName = '') => {
+  viewFile: (stage, projectId, filename, projectName = '', options = {}) => {
     const api = new ApiService();
     const queryParams = new URLSearchParams({ projectName });
+    
+    // 添加入库特殊参数
+    if (stage === 'warehouseIn') {
+      if (options.warehouseType) queryParams.append('warehouseType', options.warehouseType);
+      if (options.componentType) queryParams.append('componentType', options.componentType);
+    }
+    
     const safeFilename = encodeURIComponent(filename);
     return `${api.baseURL}/files/view/${stage}/${projectId}/${safeFilename}?${queryParams.toString()}`;
   },
 
   // 删除文件
-  deleteFile: async (stage, projectId, filename, projectName = '') => {
+  deleteFile: async (stage, projectId, filename, projectName = '', options = {}) => {
     const api = new ApiService();
     const queryParams = new URLSearchParams({ projectName });
+    
+    // 添加入库特殊参数
+    if (stage === 'warehouseIn') {
+      if (options.warehouseType) queryParams.append('warehouseType', options.warehouseType);
+      if (options.componentType) queryParams.append('componentType', options.componentType);
+    }
+    
     return api.delete(`/files/${stage}/${projectId}/${filename}?${queryParams.toString()}`);
   },
 
