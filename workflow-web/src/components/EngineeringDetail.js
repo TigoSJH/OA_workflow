@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './EngineeringDetail.css';
 import { projectAPI, fileAPI } from '../services/api';
+import { smartCompressMultiple } from '../utils/imageCompressor';
 
 const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
   // 合并所有工程图纸到一个数组
@@ -153,8 +154,20 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
     try {
       setUploading(true);
       
+      console.log(`[工程上传] 准备上传 ${selectedFiles.length} 个文件，正在压缩...`);
+      
+      // 智能压缩图片（只压缩大于1MB的图片）
+      const compressedFiles = await smartCompressMultiple(selectedFiles, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+        threshold: 1  // 超过1MB才压缩
+      });
+      
+      console.log('[工程上传] 压缩完成，开始上传到服务器...');
+      
       // 上传文件到文件系统
-      uploadedFiles = await uploadFilesToServer(selectedFiles);
+      uploadedFiles = await uploadFilesToServer(compressedFiles);
       
       // 合并到现有文件列表
       const updatedFiles = [...engineeringDrawings, ...uploadedFiles];
@@ -167,8 +180,8 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
 
       // 只有成功保存到数据库后才更新本地状态
       setEngineeringDrawings(updatedFiles);
-      console.log('工程图纸上传成功，已保存到F盘');
-      console.log('上传的文件信息:', uploadedFiles);
+      console.log('[工程上传] 图纸上传成功，已保存到F盘');
+      console.log('[工程上传] 上传的文件信息:', uploadedFiles);
     } catch (error) {
       console.error('上传失败：', error.message);
       
@@ -260,8 +273,21 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
 
     try {
       setUploading(true);
-      // 直接保存原始文件对象用于后续统一提交（不再压缩为Base64）
-      const newFiles = selectedFiles.map(file => ({
+      
+      console.log(`[工程上传] 准备添加 ${selectedFiles.length} 个文件，正在压缩...`);
+      
+      // 智能压缩图片（只压缩大于1MB的图片）
+      const compressedFiles = await smartCompressMultiple(selectedFiles, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+        threshold: 1  // 超过1MB才压缩
+      });
+      
+      console.log('[工程上传] 压缩完成，已添加到待提交列表');
+      
+      // 保存压缩后的文件对象用于后续统一提交
+      const newFiles = compressedFiles.map(file => ({
         file,
         name: file.name,
         size: (file.size / 1024).toFixed(2) + ' KB',
@@ -273,7 +299,8 @@ const EngineeringDetail = ({ project, user, onBack, onRefresh }) => {
 
       setMyUploadFiles(prev => [...prev, ...newFiles]);
     } catch (error) {
-      console.error('上传失败：', error.message);
+      console.error('[工程上传] 上传失败：', error.message);
+      alert('上传失败：' + error.message);
     } finally {
       setUploading(false);
     }

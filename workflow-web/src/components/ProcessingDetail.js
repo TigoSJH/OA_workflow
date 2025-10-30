@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './ProcessingDetail.css';
 import { projectAPI, fileAPI } from '../services/api';
+import { smartCompressMultiple } from '../utils/imageCompressor';
 
 const ProcessingDetail = ({ project, user, onBack }) => {
   // 加工图片
@@ -91,16 +92,28 @@ const ProcessingDetail = ({ project, user, onBack }) => {
     try {
       setUploading(true);
       
+      console.log(`[上传] 准备上传 ${selectedFiles.length} 个文件，正在压缩...`);
+      
+      // 智能压缩图片（只压缩大于1MB的图片）
+      const compressedFiles = await smartCompressMultiple(selectedFiles, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+        threshold: 1  // 超过1MB才压缩
+      });
+      
+      console.log('[上传] 压缩完成，开始上传到服务器...');
+      
       // 上传文件到文件系统
-      const uploadedFiles = await uploadFilesToServer(selectedFiles);
+      const uploadedFiles = await uploadFilesToServer(compressedFiles);
       const updatedFiles = [...currentList, ...uploadedFiles];
       targetSetter(updatedFiles);
 
       setUploading(false);
-      console.log('文件上传成功，已保存到F盘');
+      console.log('[上传] 文件上传成功，已保存到F盘');
     } catch (error) {
       setUploading(false);
-      console.error('图片处理失败:', error.message);
+      console.error('[上传] 图片处理失败:', error.message);
       alert('上传失败：' + error.message);
     }
 

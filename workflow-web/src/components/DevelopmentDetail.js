@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './DevelopmentDetail.css';
 import { projectAPI, fileAPI } from '../services/api';
+import { smartCompressMultiple } from '../utils/imageCompressor';
 
 const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
   // 合并所有研发图纸到一个数组
@@ -161,9 +162,21 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
     try {
       setUploading(true);
       
-      // 直接保存文件对象到本地状态（不压缩）
-      const fileObjects = selectedFiles.map(file => ({
-        file: file,  // 保存原始文件对象
+      console.log(`[研发上传] 准备添加 ${selectedFiles.length} 个文件，正在压缩...`);
+      
+      // 智能压缩图片（只压缩大于1MB的图片）
+      const compressedFiles = await smartCompressMultiple(selectedFiles, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+        threshold: 1  // 超过1MB才压缩
+      });
+      
+      console.log('[研发上传] 压缩完成，已添加到待提交列表');
+      
+      // 保存压缩后的文件对象到本地状态
+      const fileObjects = compressedFiles.map(file => ({
+        file: file,  // 保存压缩后的文件对象
         name: file.name,
         size: (file.size / 1024).toFixed(2) + ' KB',
         uploadTime: new Date().toISOString(),
@@ -338,8 +351,20 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
     try {
       setUploading(true);
       
+      console.log(`[研发上传] 准备上传 ${selectedFiles.length} 个文件，正在压缩...`);
+      
+      // 智能压缩图片（只压缩大于1MB的图片）
+      const compressedFiles = await smartCompressMultiple(selectedFiles, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+        threshold: 1  // 超过1MB才压缩
+      });
+      
+      console.log('[研发上传] 压缩完成，开始上传到服务器...');
+      
       // 上传文件到文件系统
-      const uploadedFiles = await uploadFilesToServer(selectedFiles);
+      const uploadedFiles = await uploadFilesToServer(compressedFiles);
       
       // 合并到现有文件列表
       const updatedFiles = [...developmentDrawings, ...uploadedFiles];
@@ -351,9 +376,9 @@ const DevelopmentDetail = ({ project, user, onBack, onRefresh }) => {
         drawingImages: []
       });
 
-      console.log('研发图纸上传成功，已保存到F盘');
+      console.log('[研发上传] 图纸上传成功，已保存到F盘');
     } catch (error) {
-      console.error('上传失败：', error.message);
+      console.error('[研发上传] 上传失败：', error.message);
       alert('上传失败：' + error.message);
     } finally {
       setUploading(false);
