@@ -223,6 +223,15 @@ const projectSchema = new mongoose.Schema({
   warehouseInCompletedBy: {
     type: String
   },
+  // 第一次入库时由库管上传的图片
+  purchaseComponents: {
+    type: Array,
+    default: []
+  },
+  processingComponents: {
+    type: Array,
+    default: []
+  },
 
   // 出库阶段相关（第一次出库：装配前领料）
   warehouseOutCompleted: {

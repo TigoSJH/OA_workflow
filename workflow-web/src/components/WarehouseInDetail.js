@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './WarehouseInDetail.css';
 import { projectAPI, fileAPI } from '../services/api';
+import { smartCompressMultiple } from '../utils/imageCompressor';
 
 const WarehouseInDetail = ({ project, user, onBack }) => {
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [showImagePreview, setShowImagePreview] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -13,8 +15,15 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
   const [isCompleted] = useState(isSecondWarehouseIn ? !!project.warehouseInSecondCompleted : !!project.warehouseInCompleted);
   const [expandedFolders, setExpandedFolders] = useState({});
 
-  // 入库阶段不再设置时间周期/剩余时间
-  const remainingDays = null;
+  // 第一次入库需要上传的图片
+  const [purchaseComponents, setPurchaseComponents] = useState(project.purchaseComponents || []);
+  const [processingComponents, setProcessingComponents] = useState(project.processingComponents || []);
+
+  // 当 project 变化时，更新状态
+  useEffect(() => {
+    setPurchaseComponents(project.purchaseComponents || []);
+    setProcessingComponents(project.processingComponents || []);
+  }, [project]);
 
   const toggleFolder = (folderName) => {
     setExpandedFolders(prev => ({
@@ -23,8 +32,152 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
     }));
   };
 
+  // 文件上传辅助函数
+  const uploadFilesToServer = async (files, stage) => {
+    try {
+      const response = await fileAPI.uploadMultipleFiles(
+        files,
+        project.id,
+        project.projectName,
+        stage
+      );
+      return response.files;
+    } catch (error) {
+      console.error('文件上传失败:', error);
+      throw error;
+    }
+  };
+
+  // 处理上传（通用）
+  const handleUploadCommon = async (e, targetSetter, currentList, stage) => {
+    const selectedFiles = Array.from(e.target.files);
+    
+    if (selectedFiles.length === 0) return;
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    for (let file of selectedFiles) {
+      if (!allowedTypes.includes(file.type)) {
+        alert('只能上传图片文件（JPG、PNG、GIF、WebP）');
+        return;
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        alert(`图片 ${file.name} 超过20MB限制`);
+        return;
+      }
+    }
+
+    try {
+      setUploading(true);
+      
+      console.log(`[入库上传] 准备上传 ${selectedFiles.length} 个文件，正在压缩...`);
+      
+      // 智能压缩图片
+      const compressedFiles = await smartCompressMultiple(selectedFiles, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+        threshold: 1
+      });
+      
+      console.log('[入库上传] 压缩完成，开始上传到服务器...');
+      
+      // 上传文件到文件系统
+      const uploadedFiles = await uploadFilesToServer(compressedFiles, stage);
+      const updatedFiles = [...currentList, ...uploadedFiles];
+      targetSetter(updatedFiles);
+
+      setUploading(false);
+      console.log('[入库上传] 文件上传成功');
+    } catch (error) {
+      setUploading(false);
+      console.error('[入库上传] 图片处理失败:', error.message);
+      alert('上传失败：' + error.message);
+    }
+
+    e.target.value = '';
+  };
+
+  // 处理零部件图片上传
+  const handlePurchaseComponentsSelect = async (e) => {
+    await handleUploadCommon(e, setPurchaseComponents, purchaseComponents, 'warehouseIn');
+  };
+
+  // 处理加工件图片上传
+  const handleProcessingComponentsSelect = async (e) => {
+    await handleUploadCommon(e, setProcessingComponents, processingComponents, 'warehouseIn');
+  };
+
+  // 删除图片
+  const handleDeleteImage = async (index, targetSetter, currentList, imageName) => {
+    try {
+      const toast = document.createElement('div');
+      toast.textContent = '🗑️ 正在删除...';
+      toast.style.cssText = `
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.85); color: white; padding: 12px 24px;
+        border-radius: 8px; font-size: 16px; font-weight: 500; z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      `;
+      document.body.appendChild(toast);
+      
+      await fileAPI.deleteFile('warehouseIn', project.id, imageName, project.projectName);
+      
+      const updated = currentList.filter((_, i) => i !== index);
+      targetSetter(updated);
+
+      toast.textContent = '✅ 删除成功';
+      setTimeout(() => document.body.removeChild(toast), 1500);
+    } catch (error) {
+      console.error('删除失败:', error);
+      alert('删除失败：' + error.message);
+    }
+  };
+
+  // 提交图片到数据库
+  const handleSubmitImages = async () => {
+    if (!isSecondWarehouseIn && purchaseComponents.length === 0 && processingComponents.length === 0) {
+      alert('请至少上传零部件图片或加工件图片');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      await projectAPI.updateProject(project.id, {
+        purchaseComponents,
+        processingComponents
+      });
+
+      console.log('图片提交成功');
+      setLoading(false);
+      
+      const toast = document.createElement('div');
+      toast.textContent = '✅ 图片保存成功';
+      toast.style.cssText = `
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+        background: rgba(16, 185, 129, 0.95); color: white; padding: 12px 24px;
+        border-radius: 8px; font-size: 16px; font-weight: 500; z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => document.body.removeChild(toast), 2000);
+    } catch (error) {
+      setLoading(false);
+      console.error('提交失败:', error);
+      alert('提交失败：' + error.message);
+    }
+  };
+
   // 推送到下一阶段
   const handlePushToNextStage = async () => {
+    // 第一次入库需要先检查是否上传了图片
+    if (!isSecondWarehouseIn) {
+      if (purchaseComponents.length === 0 && processingComponents.length === 0) {
+        alert('请至少上传零部件图片或加工件图片后再推送');
+        return;
+      }
+    }
+
     try {
       setLoading(true);
       
@@ -41,7 +194,9 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
         updateData = {
           warehouseInCompleted: true,
           warehouseInCompletedTime: new Date().toISOString(),
-          warehouseInCompletedBy: user.displayName || user.username
+          warehouseInCompletedBy: user.displayName || user.username,
+          purchaseComponents,
+          processingComponents
         };
       }
       
@@ -58,10 +213,10 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
     } catch (error) {
       setLoading(false);
       console.error('推送失败:', error);
+      alert('推送失败：' + error.message);
     }
   };
 
-  // 下载图片
   // 图片预览
   const handleImagePreview = async (imageData, stage = 'warehouseIn') => {
     try {
@@ -114,14 +269,13 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
     }
   };
 
-  // 渲染文件夹
+  // 渲染文件夹（只读）
   const renderFileFolder = (folderName, displayName, files, icon = '📁', stage = 'warehouseIn') => {
     const isExpanded = expandedFolders[folderName];
     const fileCount = files ? files.length : 0;
 
-    // 批量下载处理函数
     const handleDownloadAll = async (e) => {
-      e.stopPropagation(); // 阻止点击事件冒泡到父元素
+      e.stopPropagation();
       if (fileCount === 0) return;
       
       try {
@@ -216,14 +370,115 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
     );
   };
 
+  // 渲染可上传的文件夹（第一次入库专用）
+  const renderUploadableFolder = (folderName, displayName, files, icon, handleUpload, handleDelete) => {
+    const isExpanded = expandedFolders[folderName];
+    const fileCount = files ? files.length : 0;
+
+    return (
+      <div className="file-folder uploadable">
+        <div 
+          className="folder-header" 
+          onClick={() => toggleFolder(folderName)}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="folder-left">
+            <span className="folder-icon">{isExpanded ? '📂' : icon}</span>
+            <span className="folder-name">{displayName}</span>
+            <span className="file-count">({fileCount} 个文件)</span>
+          </div>
+          <div className="folder-right">
+            <label className="btn-upload-folder" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleUpload}
+                style={{ display: 'none' }}
+                disabled={uploading || isCompleted}
+              />
+              📸 上传图片
+            </label>
+            <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
+          </div>
+        </div>
+        
+        {isExpanded && (
+          <div className="folder-content">
+            {fileCount === 0 ? (
+              <div className="no-files">暂无文件</div>
+            ) : (
+              <div className="file-list-simple">
+                {files.map((file, index) => (
+                  <div 
+                    key={index} 
+                    className="file-item-simple"
+                    onClick={() => handleImagePreview(file, 'warehouseIn')}
+                  >
+                    <div className="file-info-simple">
+                      <div className="file-name-simple">{file.name}</div>
+                      <div className="file-meta-simple">
+                        {file.size} · {file.uploadTime ? new Date(file.uploadTime).toLocaleString('zh-CN', { 
+                          month: '2-digit', 
+                          day: '2-digit', 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        }) : ''}
+                        {file.uploadBy && ` · ${file.uploadBy}`}
+                      </div>
+                    </div>
+                    <div className="file-actions-simple">
+                      <button 
+                        className="btn-action-simple btn-view"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleImagePreview(file, 'warehouseIn');
+                        }}
+                        title="预览"
+                      >
+                        👁️ 预览
+                      </button>
+                      <button 
+                        className="btn-action-simple btn-download"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadImage(file, 'warehouseIn');
+                        }}
+                        title="下载"
+                      >
+                        ⬇️ 下载
+                      </button>
+                      {!isCompleted && (
+                        <button 
+                          className="btn-action-simple btn-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(index);
+                          }}
+                          title="删除"
+                        >
+                          🗑️ 删除
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="warehousein-detail-container">
       {/* Loading覆盖层 */}
-      {loading && (
+      {(loading || uploading) && (
         <div className="loading-overlay">
           <div className="loading-spinner">
             <img src="/loading.png" alt="Loading" className="loading-image" />
-            <p>处理中...</p>
+            <p>{uploading ? '上传中...' : '处理中...'}</p>
           </div>
         </div>
       )}
@@ -233,7 +488,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
         <button className="back-button" onClick={onBack}>
           ← 
         </button>
-        <h2 className="detail-title">入库管理</h2>
+        <h2 className="detail-title">{isSecondWarehouseIn ? '第二次入库（整机入库）' : '第一次入库（零部件入库）'}</h2>
       </div>
 
       <div className="engineering-detail-content">
@@ -262,7 +517,6 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
                 <span className="info-label">⏱️ 项目时长</span>
                 <span className="info-value">{project.duration ? `${project.duration} 月` : '未设置'}</span>
               </div>
-              {/* 入库阶段不显示周期与剩余时间 */}
             </div>
             <div className="description-box">
               <h5>项目描述：</h5>
@@ -271,11 +525,11 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
           </div>
         </div>
 
-        {/* 图纸文件 */}
+        {/* 参考图纸 */}
         <div className="detail-section">
           <div className="section-header">
             <span className="section-icon">📁</span>
-            <h3 className="section-title">项目文件</h3>
+            <h3 className="section-title">参考图纸</h3>
           </div>
 
           {renderFileFolder(
@@ -295,23 +549,74 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
             '🛠️',
             'engineering'
           )}
-
-          {renderFileFolder(
-            'purchaseSection',
-            '采购清单',
-            project.purchaseDocuments || [],
-            '🛒',
-            'purchase'
-          )}
-
-          {renderFileFolder(
-            'processingSection',
-            '加工图片',
-            project.processingImages || [],
-            '⚙️',
-            'processing'
-          )}
         </div>
+
+        {/* 第一次入库：上传零部件和加工件图片 */}
+        {!isSecondWarehouseIn && !isCompleted && (
+          <div className="detail-section">
+            <div className="section-header">
+              <span className="section-icon">📸</span>
+              <h3 className="section-title">入库图片上传</h3>
+            </div>
+
+            {renderUploadableFolder(
+              'purchaseComponentsSection',
+              '零部件图片（采购）',
+              purchaseComponents,
+              '📦',
+              handlePurchaseComponentsSelect,
+              (index) => handleDeleteImage(index, setPurchaseComponents, purchaseComponents, purchaseComponents[index].filename)
+            )}
+
+            {renderUploadableFolder(
+              'processingComponentsSection',
+              '加工件图片（加工）',
+              processingComponents,
+              '⚙️',
+              handleProcessingComponentsSelect,
+              (index) => handleDeleteImage(index, setProcessingComponents, processingComponents, processingComponents[index].filename)
+            )}
+
+            <div className="warehousein-notice">
+              <p>📢 说明：</p>
+              <ul>
+                <li>请分别上传采购零部件和加工件的实物图片</li>
+                <li>上传完成后点击"保存图片"按钮进行保存</li>
+                <li>保存后可点击"推送到出库阶段"按钮完成入库</li>
+              </ul>
+            </div>
+
+            <button className="btn-submit-images" onClick={handleSubmitImages} disabled={loading || uploading}>
+              💾 保存图片
+            </button>
+          </div>
+        )}
+
+        {/* 第一次入库：已上传的图片（只读） */}
+        {!isSecondWarehouseIn && isCompleted && (
+          <div className="detail-section">
+            <div className="section-header">
+              <span className="section-icon">📸</span>
+              <h3 className="section-title">已上传的入库图片</h3>
+            </div>
+
+            {renderFileFolder(
+              'purchaseComponentsSection',
+              '零部件图片（采购）',
+              purchaseComponents,
+              '📦',
+              'warehouseIn'
+            )}
+
+            {renderFileFolder(
+              'processingComponentsSection',
+              '加工件图片（加工）',
+              processingComponents,
+              '⚙️',
+              'warehouseIn'
+            )}
+          </div>
+        )}
 
         {/* 入库完成信息 */}
         {isCompleted && (
@@ -352,20 +657,16 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
           </div>
         )}
 
-        {/* 入库说明 */}
-        {!isCompleted && (
+        {/* 入库说明（第二次入库） */}
+        {isSecondWarehouseIn && !isCompleted && (
           <div className="detail-section">
             <div className="section-header">
               <span className="section-icon">ℹ️</span>
               <h3 className="section-title">入库说明</h3>
             </div>
             <div className="warehousein-notice">
-              <p>📦 入库管理员无需上传文件或图片</p>
-              {isSecondWarehouseIn ? (
-                <p>✅ 完成整机入库后，点击下方按钮推送到出库确认阶段</p>
-              ) : (
-                <p>✅ 完成入库工作后，点击下方按钮推送到出库阶段即可</p>
-              )}
+              <p>📦 第二次入库（整机入库）无需上传图片</p>
+              <p>✅ 完成整机入库后，点击下方按钮推送到出库确认阶段</p>
             </div>
           </div>
         )}
@@ -373,7 +674,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
         {/* 推送按钮 */}
         {!isCompleted && (
           <div className="push-section">
-            <button className="btn-push-bottom" onClick={handlePushToNextStage}>
+            <button className="btn-push-bottom" onClick={handlePushToNextStage} disabled={loading || uploading}>
               {isSecondWarehouseIn 
                 ? '✅ 整机入库完成，推送到出库确认阶段' 
                 : '✅ 入库完成，推送到出库阶段'}
@@ -436,4 +737,3 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
 };
 
 export default WarehouseInDetail;
-
