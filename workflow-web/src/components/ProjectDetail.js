@@ -509,8 +509,26 @@ const ProjectDetail = ({ project, user, onBack, onUpdate }) => {
                           <button
                             onClick={async () => {
                               try {
+                                // 使用 fetch 获取文件（带token），然后创建 blob URL 打开
                                 const viewUrl = fileAPI.viewContract(project.id, project.contractFile, project.projectName);
-                                window.open(viewUrl, '_blank');
+                                const response = await fetch(viewUrl, {
+                                  headers: {
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                  }
+                                });
+                                
+                                if (!response.ok) {
+                                  throw new Error(`预览失败 (HTTP ${response.status})`);
+                                }
+                                
+                                const blob = await response.blob();
+                                const blobUrl = URL.createObjectURL(blob);
+                                window.open(blobUrl, '_blank');
+                                
+                                // 延迟清理 blob URL，确保新窗口有时间加载
+                                setTimeout(() => {
+                                  URL.revokeObjectURL(blobUrl);
+                                }, 100);
                               } catch (error) {
                                 console.error('预览失败:', error);
                                 alert('预览失败：' + error.message);
