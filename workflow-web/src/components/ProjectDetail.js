@@ -458,11 +458,11 @@ const ProjectDetail = ({ project, user, onBack, onUpdate }) => {
                     <div className="info-grid">
                       <div className="info-item">
                         <span className="info-label">💰 项目预算</span>
-                        <span className="info-value">{project.budget}</span>
+                        <span className="info-value">{project.budget} 万</span>
                       </div>
                       <div className="info-item">
                         <span className="info-label">⏱️ 项目时间</span>
-                        <span className="info-value">{project.duration}</span>
+                        <span className="info-value">{project.duration} 月</span>
                       </div>
                       <div className="info-item">
                         <span className="info-label">👤 申请人</span>
