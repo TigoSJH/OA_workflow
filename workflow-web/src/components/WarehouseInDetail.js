@@ -33,21 +33,13 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
   };
 
   // 文件上传辅助函数
-  const uploadFilesToServer = async (files, stage, componentType = '') => {
+  const uploadFilesToServer = async (files, stage) => {
     try {
-      // 对于 warehouseIn 阶段，需要传递额外的参数
-      const options = {};
-      if (stage === 'warehouseIn') {
-        options.warehouseType = isSecondWarehouseIn ? 'second' : 'first';
-        options.componentType = componentType; // 'purchase' or 'processing'
-      }
-      
       const response = await fileAPI.uploadMultipleFiles(
         files,
         project.id,
         project.projectName,
-        stage,
-        options
+        stage
       );
       return response.files;
     } catch (error) {
@@ -89,8 +81,8 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
       
       console.log('[入库上传] 压缩完成，开始上传到服务器...');
       
-      // 上传文件到文件系统（传递 componentType='purchase'）
-      const uploadedFiles = await uploadFilesToServer(compressedFiles, 'warehouseIn', 'purchase');
+      // 上传文件到文件系统
+      const uploadedFiles = await uploadFilesToServer(compressedFiles, 'warehouseIn');
       const updatedFiles = [...purchaseComponents, ...uploadedFiles];
       setPurchaseComponents(updatedFiles);
 
@@ -143,8 +135,8 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
       
       console.log('[入库上传] 压缩完成，开始上传到服务器...');
       
-      // 上传文件到文件系统（传递 componentType='processing'）
-      const uploadedFiles = await uploadFilesToServer(compressedFiles, 'warehouseIn', 'processing');
+      // 上传文件到文件系统
+      const uploadedFiles = await uploadFilesToServer(compressedFiles, 'warehouseIn');
       const updatedFiles = [...processingComponents, ...uploadedFiles];
       setProcessingComponents(updatedFiles);
 
@@ -165,7 +157,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
   };
 
   // 删除图片
-  const handleDeleteImage = async (index, targetSetter, currentList, imageName, fieldName, componentType = '') => {
+  const handleDeleteImage = async (index, targetSetter, currentList, imageName, fieldName) => {
     try {
       const toast = document.createElement('div');
       toast.textContent = '🗑️ 正在删除...';
@@ -177,13 +169,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
       `;
       document.body.appendChild(toast);
       
-      // 构建 options
-      const options = {
-        warehouseType: isSecondWarehouseIn ? 'second' : 'first',
-        componentType: componentType
-      };
-      
-      await fileAPI.deleteFile('warehouseIn', project.id, imageName, project.projectName, options);
+      await fileAPI.deleteFile('warehouseIn', project.id, imageName, project.projectName);
       
       const updated = currentList.filter((_, i) => i !== index);
       targetSetter(updated);
@@ -286,16 +272,10 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
   };
 
   // 图片预览
-  const handleImagePreview = async (imageData, stage = 'warehouseIn', componentType = '') => {
+  const handleImagePreview = async (imageData, stage = 'warehouseIn') => {
     try {
       if (imageData.filename) {
-        // 构建 options
-        const options = {
-          warehouseType: isSecondWarehouseIn ? 'second' : 'first',
-          componentType: componentType || imageData.componentType || ''
-        };
-        
-        const viewUrl = fileAPI.viewFile(stage, project.id, imageData.filename, project.projectName, options);
+        const viewUrl = fileAPI.viewFile(stage, project.id, imageData.filename, project.projectName);
         const response = await fetch(viewUrl, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -308,7 +288,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
         
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
-        setPreviewImage({ ...imageData, url: blobUrl, data: blobUrl, preview: blobUrl, componentType });
+        setPreviewImage({ ...imageData, url: blobUrl, data: blobUrl, preview: blobUrl });
       } else {
         setPreviewImage(imageData);
       }
@@ -320,16 +300,10 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
   };
 
   // 下载图片
-  const handleDownloadImage = async (imageData, stage = 'warehouseIn', componentType = '') => {
+  const handleDownloadImage = async (imageData, stage = 'warehouseIn') => {
     try {
       if (imageData.filename) {
-        // 构建 options
-        const options = {
-          warehouseType: isSecondWarehouseIn ? 'second' : 'first',
-          componentType: componentType || imageData.componentType || ''
-        };
-        
-        await fileAPI.downloadFile(stage, project.id, imageData.filename, project.projectName, options);
+        await fileAPI.downloadFile(stage, project.id, imageData.filename, project.projectName);
       } else {
         const dataUrl = imageData.url || imageData.data || imageData.preview;
         if (!dataUrl) {
@@ -350,7 +324,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
   };
 
   // 渲染文件夹（只读或可删除）
-  const renderFileFolder = (folderName, displayName, files, icon = '📁', stage = 'warehouseIn', deleteHandler = null, componentType = '') => {
+  const renderFileFolder = (folderName, displayName, files, icon = '📁', stage = 'warehouseIn', deleteHandler = null) => {
     const isExpanded = expandedFolders[folderName];
     const fileCount = files ? files.length : 0;
 
@@ -404,7 +378,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
                   <div 
                     key={index} 
                     className="file-item-simple"
-                    onClick={() => handleImagePreview(file, stage, componentType)}
+                    onClick={() => handleImagePreview(file, stage)}
                   >
                     <div className="file-info-simple">
                       <div className="file-name-simple">{file.name}</div>
@@ -423,7 +397,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
                         className="btn-action-simple btn-view"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleImagePreview(file, stage, componentType);
+                          handleImagePreview(file, stage);
                         }}
                         title="预览"
                       >
@@ -433,7 +407,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
                         className="btn-action-simple btn-download"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDownloadImage(file, stage, componentType);
+                          handleDownloadImage(file, stage);
                         }}
                         title="下载"
                       >
@@ -713,8 +687,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
               purchaseComponents,
               '📦',
               'warehouseIn',
-              (index) => handleDeleteImage(index, setPurchaseComponents, purchaseComponents, purchaseComponents[index].filename, 'purchaseComponents', 'purchase'),
-              'purchase'  // 传递 componentType
+              (index) => handleDeleteImage(index, setPurchaseComponents, purchaseComponents, purchaseComponents[index].filename, 'purchaseComponents')
             )}
 
             {processingComponents.length > 0 && renderFileFolder(
@@ -723,8 +696,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
               processingComponents,
               '⚙️',
               'warehouseIn',
-              (index) => handleDeleteImage(index, setProcessingComponents, processingComponents, processingComponents[index].filename, 'processingComponents', 'processing'),
-              'processing'  // 传递 componentType
+              (index) => handleDeleteImage(index, setProcessingComponents, processingComponents, processingComponents[index].filename, 'processingComponents')
             )}
           </div>
         )}
@@ -742,9 +714,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
               '零部件图片（采购）',
               purchaseComponents,
               '📦',
-              'warehouseIn',
-              null,  // 只读，无删除功能
-              'purchase'  // 传递 componentType
+              'warehouseIn'
             )}
 
             {renderFileFolder(
@@ -752,9 +722,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
               '加工件图片（加工）',
               processingComponents,
               '⚙️',
-              'warehouseIn',
-              null,  // 只读，无删除功能
-              'processing'  // 传递 componentType
+              'warehouseIn'
             )}
           </div>
         )}

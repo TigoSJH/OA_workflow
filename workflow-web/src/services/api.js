@@ -356,14 +356,10 @@ export const fileAPI = {
   },
 
   // 批量上传文件到文件系统
-  uploadMultipleFiles: async (files, projectId, projectName, stage = 'other', options = {}) => {
+  uploadMultipleFiles: async (files, projectId, projectName, stage = 'other') => {
     const api = new ApiService();
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
-    // 同时把参数放到 FormData，双保险（部分环境下 storage.destination 读取 body 更稳妥）
-    formData.append('stage', stage);
-    formData.append('projectId', projectId);
-    formData.append('projectName', projectName || '');
     
     // 参数通过URL query string传递，确保Multer的destination函数能获取到
     const queryParams = new URLSearchParams({
@@ -371,16 +367,6 @@ export const fileAPI = {
       projectName: projectName,
       stage: stage
     });
-    
-    // 添加入库特殊参数
-    if (stage === 'warehouseIn' && options.warehouseType) {
-      queryParams.append('warehouseType', options.warehouseType);
-      formData.append('warehouseType', options.warehouseType);
-    }
-    if (stage === 'warehouseIn' && options.componentType) {
-      queryParams.append('componentType', options.componentType);
-      formData.append('componentType', options.componentType);
-    }
     
     return api.uploadFile(`/files/upload-multiple?${queryParams.toString()}`, formData);
   },
@@ -392,16 +378,9 @@ export const fileAPI = {
   },
 
   // 下载文件
-  downloadFile: async (stage, projectId, filename, projectName = '', options = {}) => {
+  downloadFile: async (stage, projectId, filename, projectName = '') => {
     const api = new ApiService();
     const queryParams = new URLSearchParams({ projectName });
-    
-    // 添加入库特殊参数
-    if (stage === 'warehouseIn') {
-      if (options.warehouseType) queryParams.append('warehouseType', options.warehouseType);
-      if (options.componentType) queryParams.append('componentType', options.componentType);
-    }
-    
     const safeFilename = encodeURIComponent(filename);
     const url = `/files/download/${stage}/${projectId}/${safeFilename}?${queryParams.toString()}`;
     
@@ -478,31 +457,17 @@ export const fileAPI = {
   },
 
   // 查看/预览文件
-  viewFile: (stage, projectId, filename, projectName = '', options = {}) => {
+  viewFile: (stage, projectId, filename, projectName = '') => {
     const api = new ApiService();
     const queryParams = new URLSearchParams({ projectName });
-    
-    // 添加入库特殊参数
-    if (stage === 'warehouseIn') {
-      if (options.warehouseType) queryParams.append('warehouseType', options.warehouseType);
-      if (options.componentType) queryParams.append('componentType', options.componentType);
-    }
-    
     const safeFilename = encodeURIComponent(filename);
     return `${api.baseURL}/files/view/${stage}/${projectId}/${safeFilename}?${queryParams.toString()}`;
   },
 
   // 删除文件
-  deleteFile: async (stage, projectId, filename, projectName = '', options = {}) => {
+  deleteFile: async (stage, projectId, filename, projectName = '') => {
     const api = new ApiService();
     const queryParams = new URLSearchParams({ projectName });
-    
-    // 添加入库特殊参数
-    if (stage === 'warehouseIn') {
-      if (options.warehouseType) queryParams.append('warehouseType', options.warehouseType);
-      if (options.componentType) queryParams.append('componentType', options.componentType);
-    }
-    
     return api.delete(`/files/${stage}/${projectId}/${filename}?${queryParams.toString()}`);
   },
 
