@@ -17,9 +17,9 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     try {
       // 从请求中获取阶段类型
-      const stage = req.query.stage || req.body.stage || 'other';
-      const projectId = req.query.projectId || req.body.projectId || 'temp';
-      const projectName = req.query.projectName || req.body.projectName || '';
+      const stage = (req.query.stage || req.body.stage || 'other').toString().trim();
+      const projectId = (req.query.projectId || req.body.projectId || 'temp').toString().trim();
+      const projectName = (req.query.projectName || req.body.projectName || '').toString();
       
       // 清理项目名称，移除不允许的文件名字符
       const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim();
@@ -31,8 +31,8 @@ const storage = multer.diskStorage({
       
       // 特殊处理 warehouseIn 阶段
       if (stage === 'warehouseIn') {
-        const warehouseType = req.query.warehouseType || req.body.warehouseType || 'first'; // first or second
-        const componentType = req.query.componentType || req.body.componentType || ''; // purchase or processing
+        const warehouseType = (req.query.warehouseType || req.body.warehouseType || 'first').toString().trim(); // first or second
+        const componentType = (req.query.componentType || req.body.componentType || '').toString().trim(); // purchase or processing
         
         // 构建路径: F:\OA_Files\warehouseIn\{projectId_projectName}\第一次入库\ 或 第二次入库\
         const warehouseFolder = warehouseType === 'first' ? '第一次入库' : '第二次入库';

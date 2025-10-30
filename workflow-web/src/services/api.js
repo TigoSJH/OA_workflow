@@ -360,6 +360,10 @@ export const fileAPI = {
     const api = new ApiService();
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
+    // 同时把参数放到 FormData，双保险（部分环境下 storage.destination 读取 body 更稳妥）
+    formData.append('stage', stage);
+    formData.append('projectId', projectId);
+    formData.append('projectName', projectName || '');
     
     // 参数通过URL query string传递，确保Multer的destination函数能获取到
     const queryParams = new URLSearchParams({
@@ -371,9 +375,11 @@ export const fileAPI = {
     // 添加入库特殊参数
     if (stage === 'warehouseIn' && options.warehouseType) {
       queryParams.append('warehouseType', options.warehouseType);
+      formData.append('warehouseType', options.warehouseType);
     }
     if (stage === 'warehouseIn' && options.componentType) {
       queryParams.append('componentType', options.componentType);
+      formData.append('componentType', options.componentType);
     }
     
     return api.uploadFile(`/files/upload-multiple?${queryParams.toString()}`, formData);
