@@ -477,6 +477,85 @@ const ProjectDetail = ({ project, user, onBack, onUpdate }) => {
                       <h5>项目描述：</h5>
                       <p>{project.description}</p>
                     </div>
+                    
+                    {/* 合同文件显示 */}
+                    {project.contractFile && (
+                      <div className="contract-file-section" style={{
+                        marginTop: '20px',
+                        padding: '15px',
+                        background: '#f8fafc',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        <h5 style={{ marginBottom: '10px', color: '#334155' }}>📄 合同文件：</h5>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px',
+                          background: 'white',
+                          borderRadius: '6px',
+                          border: '1px solid #e2e8f0'
+                        }}>
+                          <span style={{ fontSize: '24px' }}>📑</span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: '500', color: '#1e293b' }}>
+                              {project.contractFile.replace(/^\d+_/, '')}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                              PDF文件
+                            </div>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const viewUrl = fileAPI.viewContract(project.id, project.contractFile, project.projectName);
+                                window.open(viewUrl, '_blank');
+                              } catch (error) {
+                                console.error('预览失败:', error);
+                                alert('预览失败：' + error.message);
+                              }
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#3b82f6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '14px'
+                            }}
+                            onMouseOver={(e) => e.target.style.background = '#2563eb'}
+                            onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+                          >
+                            👁️ 预览
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await fileAPI.downloadContract(project.id, project.contractFile, project.projectName);
+                              } catch (error) {
+                                console.error('下载失败:', error);
+                                alert('下载失败：' + error.message);
+                              }
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '14px'
+                            }}
+                            onMouseOver={(e) => e.target.style.background = '#059669'}
+                            onMouseOut={(e) => e.target.style.background = '#10b981'}
+                          >
+                            ⬇️ 下载
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
