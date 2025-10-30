@@ -47,41 +47,51 @@
 
 /* 顶部导航 */
 .processing-detail-header {
-  background: linear-gradient(135deg, #FF9800 0%, #FFB74D 100%);
-  padding: 12px 16px;
+  background: rgb(255, 237, 208);
+  padding: 16px 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: sticky;
   top: 0;
   z-index: 10;
 }
 
 .back-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  font-size: 20px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  background: white;
+  border: 2px solid rgba(255, 152, 0, 0.3);
+  color: #FF9800;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.3s;
+  gap: 6px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .back-button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #FF9800;
+  color: white;
+  border-color: #FF9800;
+  transform: translateX(-3px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+.back-button:active {
+  transform: translateX(-1px);
 }
 
 .detail-title {
   flex: 1;
-  color: white;
-  font-size: 18px;
-  font-weight: 500;
+  color: #663d00;
+  font-size: 20px;
+  font-weight: 600;
   margin: 0;
 }
 

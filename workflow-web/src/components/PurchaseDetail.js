@@ -296,22 +296,6 @@ const PurchaseDetail = ({ project, user, onBack }) => {
           </div>
         </div>
 
-        {/* 操作提示 */}
-        <div className="detail-section">
-          <div className="section-header">
-            <span className="section-icon">💡</span>
-            <h3 className="section-title">操作说明</h3>
-          </div>
-          <div className="description-box">
-            <h5>📢 采购流程说明：</h5>
-            <ul>
-              <li>请根据工程图纸完成零部件采购</li>
-              <li>零部件图片将由库管在第一次入库时上传</li>
-              <li>采购完成后请点击下方按钮推送到加工阶段</li>
-            </ul>
-          </div>
-        </div>
-
         {/* 推送按钮 */}
         {!isCompleted && (
           <div className="push-section">
