@@ -48,8 +48,8 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
     }
   };
 
-  // 处理上传（通用）
-  const handleUploadCommon = async (e, targetSetter, currentList, stage) => {
+  // 处理零部件图片上传
+  const handlePurchaseComponentsSelect = async (e) => {
     const selectedFiles = Array.from(e.target.files);
     
     if (selectedFiles.length === 0) return;
@@ -69,7 +69,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
     try {
       setUploading(true);
       
-      console.log(`[入库上传] 准备上传 ${selectedFiles.length} 个文件，正在压缩...`);
+      console.log(`[入库上传] 准备上传 ${selectedFiles.length} 个零部件图片，正在压缩...`);
       
       // 智能压缩图片
       const compressedFiles = await smartCompressMultiple(selectedFiles, {
@@ -82,33 +82,82 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
       console.log('[入库上传] 压缩完成，开始上传到服务器...');
       
       // 上传文件到文件系统
-      const uploadedFiles = await uploadFilesToServer(compressedFiles, stage);
-      const updatedFiles = [...currentList, ...uploadedFiles];
-      targetSetter(updatedFiles);
+      const uploadedFiles = await uploadFilesToServer(compressedFiles, 'warehouseIn');
+      const updatedFiles = [...purchaseComponents, ...uploadedFiles];
+      setPurchaseComponents(updatedFiles);
+
+      // 立即保存到数据库
+      await projectAPI.updateProject(project.id, {
+        purchaseComponents: updatedFiles
+      });
 
       setUploading(false);
-      console.log('[入库上传] 文件上传成功');
+      console.log('[入库上传] 零部件图片上传并保存成功');
     } catch (error) {
       setUploading(false);
-      console.error('[入库上传] 图片处理失败:', error.message);
+      console.error('[入库上传] 零部件图片处理失败:', error.message);
       alert('上传失败：' + error.message);
     }
 
     e.target.value = '';
   };
 
-  // 处理零部件图片上传
-  const handlePurchaseComponentsSelect = async (e) => {
-    await handleUploadCommon(e, setPurchaseComponents, purchaseComponents, 'warehouseIn');
-  };
-
   // 处理加工件图片上传
   const handleProcessingComponentsSelect = async (e) => {
-    await handleUploadCommon(e, setProcessingComponents, processingComponents, 'warehouseIn');
+    const selectedFiles = Array.from(e.target.files);
+    
+    if (selectedFiles.length === 0) return;
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    for (let file of selectedFiles) {
+      if (!allowedTypes.includes(file.type)) {
+        alert('只能上传图片文件（JPG、PNG、GIF、WebP）');
+        return;
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        alert(`图片 ${file.name} 超过20MB限制`);
+        return;
+      }
+    }
+
+    try {
+      setUploading(true);
+      
+      console.log(`[入库上传] 准备上传 ${selectedFiles.length} 个加工件图片，正在压缩...`);
+      
+      // 智能压缩图片
+      const compressedFiles = await smartCompressMultiple(selectedFiles, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+        threshold: 1
+      });
+      
+      console.log('[入库上传] 压缩完成，开始上传到服务器...');
+      
+      // 上传文件到文件系统
+      const uploadedFiles = await uploadFilesToServer(compressedFiles, 'warehouseIn');
+      const updatedFiles = [...processingComponents, ...uploadedFiles];
+      setProcessingComponents(updatedFiles);
+
+      // 立即保存到数据库
+      await projectAPI.updateProject(project.id, {
+        processingComponents: updatedFiles
+      });
+
+      setUploading(false);
+      console.log('[入库上传] 加工件图片上传并保存成功');
+    } catch (error) {
+      setUploading(false);
+      console.error('[入库上传] 加工件图片处理失败:', error.message);
+      alert('上传失败：' + error.message);
+    }
+
+    e.target.value = '';
   };
 
   // 删除图片
-  const handleDeleteImage = async (index, targetSetter, currentList, imageName) => {
+  const handleDeleteImage = async (index, targetSetter, currentList, imageName, fieldName) => {
     try {
       const toast = document.createElement('div');
       toast.textContent = '🗑️ 正在删除...';
@@ -124,6 +173,11 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
       
       const updated = currentList.filter((_, i) => i !== index);
       targetSetter(updated);
+
+      // 立即保存到数据库
+      await projectAPI.updateProject(project.id, {
+        [fieldName]: updated
+      });
 
       toast.textContent = '✅ 删除成功';
       setTimeout(() => document.body.removeChild(toast), 1500);
@@ -269,8 +323,8 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
     }
   };
 
-  // 渲染文件夹（只读）
-  const renderFileFolder = (folderName, displayName, files, icon = '📁', stage = 'warehouseIn') => {
+  // 渲染文件夹（只读或可删除）
+  const renderFileFolder = (folderName, displayName, files, icon = '📁', stage = 'warehouseIn', deleteHandler = null) => {
     const isExpanded = expandedFolders[folderName];
     const fileCount = files ? files.length : 0;
 
@@ -359,6 +413,18 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
                       >
                         ⬇️ 下载
                       </button>
+                      {deleteHandler && (
+                        <button 
+                          className="btn-action-simple btn-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteHandler(index);
+                          }}
+                          title="删除"
+                        >
+                          🗑️ 删除
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -559,36 +625,79 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
               <h3 className="section-title">入库图片上传</h3>
             </div>
 
-            {renderUploadableFolder(
+            <div className="upload-grid">
+              <div className="upload-column">
+                <div className="upload-column-header">
+                  <span className="upload-icon">📦</span>
+                  <h4>零部件图片（采购）</h4>
+                </div>
+                <div className="upload-area-wrapper">
+                  <label htmlFor="purchaseComponents-upload" className="upload-area">
+                    <input
+                      id="purchaseComponents-upload"
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handlePurchaseComponentsSelect}
+                      style={{ display: 'none' }}
+                    />
+                    <div className="upload-icon-large">📸</div>
+                    <div className="upload-text">点击上传图片</div>
+                    <div className="upload-hint">支持 JPG、PNG、GIF 等格式</div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="upload-column">
+                <div className="upload-column-header">
+                  <span className="upload-icon">⚙️</span>
+                  <h4>加工件图片（加工）</h4>
+                </div>
+                <div className="upload-area-wrapper">
+                  <label htmlFor="processingComponents-upload" className="upload-area">
+                    <input
+                      id="processingComponents-upload"
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleProcessingComponentsSelect}
+                      style={{ display: 'none' }}
+                    />
+                    <div className="upload-icon-large">📸</div>
+                    <div className="upload-text">点击上传图片</div>
+                    <div className="upload-hint">支持 JPG、PNG、GIF 等格式</div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 第一次入库：已上传的图片文件夹（上传后显示） */}
+        {!isSecondWarehouseIn && !isCompleted && (purchaseComponents.length > 0 || processingComponents.length > 0) && (
+          <div className="detail-section">
+            <div className="section-header">
+              <span className="section-icon">📂</span>
+              <h3 className="section-title">已上传的图片</h3>
+            </div>
+
+            {purchaseComponents.length > 0 && renderFileFolder(
               'purchaseComponentsSection',
               '零部件图片（采购）',
               purchaseComponents,
               '📦',
-              handlePurchaseComponentsSelect,
-              (index) => handleDeleteImage(index, setPurchaseComponents, purchaseComponents, purchaseComponents[index].filename)
+              'warehouseIn',
+              (index) => handleDeleteImage(index, setPurchaseComponents, purchaseComponents, purchaseComponents[index].filename, 'purchaseComponents')
             )}
 
-            {renderUploadableFolder(
+            {processingComponents.length > 0 && renderFileFolder(
               'processingComponentsSection',
               '加工件图片（加工）',
               processingComponents,
               '⚙️',
-              handleProcessingComponentsSelect,
-              (index) => handleDeleteImage(index, setProcessingComponents, processingComponents, processingComponents[index].filename)
+              'warehouseIn',
+              (index) => handleDeleteImage(index, setProcessingComponents, processingComponents, processingComponents[index].filename, 'processingComponents')
             )}
-
-            <div className="warehousein-notice">
-              <p>📢 说明：</p>
-              <ul>
-                <li>请分别上传采购零部件和加工件的实物图片</li>
-                <li>上传完成后点击"保存图片"按钮进行保存</li>
-                <li>保存后可点击"推送到出库阶段"按钮完成入库</li>
-              </ul>
-            </div>
-
-            <button className="btn-submit-images" onClick={handleSubmitImages} disabled={loading || uploading}>
-              💾 保存图片
-            </button>
           </div>
         )}
 
