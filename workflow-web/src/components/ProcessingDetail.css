@@ -59,32 +59,30 @@
 }
 
 .back-button {
-  background: white;
-  border: 2px solid rgba(255, 152, 0, 0.3);
-  color: #FF9800;
+  background: #4facfe;
+  border: none;
+  color: white;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  gap: 4px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .back-button:hover {
-  background: #FF9800;
-  color: white;
-  border-color: #FF9800;
-  transform: translateX(-3px);
-  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+  background: #3b9fef;
+  box-shadow: 0 3px 8px rgba(79, 172, 254, 0.3);
 }
 
 .back-button:active {
-  transform: translateX(-1px);
+  background: #2a8fd8;
+  transform: scale(0.98);
 }
 
 .detail-title {
