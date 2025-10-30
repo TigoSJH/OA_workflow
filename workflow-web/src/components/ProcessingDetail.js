@@ -223,17 +223,21 @@ const ProcessingDetail = ({ project, user, onBack }) => {
 
   return (
     <div className="processing-detail-container">
-      <div className="detail-header">
-        <button className="btn-back" onClick={onBack}>
+      <div className="processing-detail-header">
+        <button className="back-button" onClick={onBack}>
           ← 返回
         </button>
-        <h2>⚙️ 加工阶段 - {project.projectName}</h2>
+        <h2 className="detail-title">⚙️ 加工阶段 - {project.projectName}</h2>
       </div>
 
-      <div className="detail-content">
+      <div className="engineering-detail-content">
         {/* 项目基本信息 */}
-        <div className="info-card">
-          <h3>项目信息</h3>
+        <div className="detail-section">
+          <div className="section-header">
+            <span className="section-icon">📋</span>
+            <h3 className="section-title">项目信息</h3>
+          </div>
+          <div className="project-info">
           <div className="info-grid">
             <div className="info-item">
               <span className="info-label">🏷️ 项目名称</span>
@@ -262,11 +266,15 @@ const ProcessingDetail = ({ project, user, onBack }) => {
               </span>
             </div>
           </div>
+          </div>
         </div>
 
         {/* 参考图纸 */}
-        <div className="files-section">
-          <h3>📂 参考图纸</h3>
+        <div className="detail-section">
+          <div className="section-header">
+            <span className="section-icon">📂</span>
+            <h3 className="section-title">参考图纸</h3>
+          </div>
           <div className="folders-container">
             {/* 研发图纸 */}
             {renderFileFolder(
@@ -289,9 +297,13 @@ const ProcessingDetail = ({ project, user, onBack }) => {
         </div>
 
         {/* 操作提示 */}
-        <div className="action-section">
-          <div className="info-box">
-            <p>📢 加工流程说明：</p>
+        <div className="detail-section">
+          <div className="section-header">
+            <span className="section-icon">💡</span>
+            <h3 className="section-title">操作说明</h3>
+          </div>
+          <div className="description-box">
+            <h5>📢 加工流程说明：</h5>
             <ul>
               <li>请根据工程图纸完成零部件加工</li>
               <li>加工件图片将由库管在第一次入库时上传</li>
@@ -301,46 +313,84 @@ const ProcessingDetail = ({ project, user, onBack }) => {
         </div>
 
         {/* 推送按钮 */}
-        <div className="actions">
-          {isCompleted ? (
-            <div className="completed-badge">
-              ✅ 加工已完成
-              {project.processingCompletedTime && (
-                <span className="completed-time">
-                  {new Date(project.processingCompletedTime).toLocaleString('zh-CN')}
-                </span>
-              )}
-              {project.processingCompletedBy && (
-                <span className="completed-by">
-                  完成人：{project.processingCompletedBy}
-                </span>
-              )}
-            </div>
-          ) : (
+        {!isCompleted && (
+          <div className="push-section">
             <button
-              className="btn-push"
+              className="btn-push-bottom"
               onClick={handlePushToNextStage}
               disabled={loading}
             >
               {loading ? '推送中...' : '✅ 完成加工，推送到第一次入库'}
             </button>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* 完成状态 */}
+        {isCompleted && (
+          <div className="detail-section">
+            <div className="section-header">
+              <span className="section-icon">✅</span>
+              <h3 className="section-title">加工状况</h3>
+            </div>
+            <div className="completion-info">
+              <div className="status-item">
+                <span className="status-label">完成状态：</span>
+                <span className="status-text status-completed">✅ 已完成加工工作</span>
+              </div>
+              {project.processingCompletedTime && (
+                <div className="status-item">
+                  <span className="status-label">完成时间：</span>
+                  <span className="status-text">
+                    {new Date(project.processingCompletedTime).toLocaleString('zh-CN')}
+                  </span>
+                </div>
+              )}
+              {project.processingCompletedBy && (
+                <div className="status-item">
+                  <span className="status-label">完成人：</span>
+                  <span className="status-text">{project.processingCompletedBy}</span>
+                </div>
+              )}
+              <div className="completion-notice">
+                <p>✨ 此项目已推送到第一次入库阶段</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 图片预览模态框 */}
       {showImagePreview && previewImage && (
         <div className="image-preview-modal" onClick={() => setShowImagePreview(false)}>
-          <div className="preview-content" onClick={(e) => e.stopPropagation()}>
-            <button className="btn-close-preview" onClick={() => setShowImagePreview(false)}>
-              ✕
-            </button>
-            <img 
-              src={previewImage.url || previewImage.data || previewImage.preview} 
-              alt={previewImage.name} 
-            />
-            <div className="preview-info">
-              <span className="preview-name">{previewImage.name}</span>
+          <div className="preview-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="preview-header">
+              <h3>图片预览</h3>
+              <button className="close-preview-btn" onClick={() => setShowImagePreview(false)}>
+                ✕
+              </button>
+            </div>
+            <div className="preview-body">
+              <img 
+                src={previewImage.url || previewImage.data || previewImage.preview} 
+                alt={previewImage.name}
+                className="preview-image"
+              />
+            </div>
+            <div className="preview-footer">
+              <div className="preview-info">
+                <p><strong>文件名：</strong>{previewImage.name}</p>
+                {previewImage.size && <p><strong>大小：</strong>{previewImage.size}</p>}
+                {previewImage.uploadTime && (
+                  <p><strong>上传时间：</strong>{new Date(previewImage.uploadTime).toLocaleString('zh-CN')}</p>
+                )}
+                {previewImage.uploadBy && <p><strong>上传人：</strong>{previewImage.uploadBy}</p>}
+              </div>
+              <button 
+                className="btn-download-preview"
+                onClick={() => handleDownloadImage(previewImage, previewImage.stage || 'processing')}
+              >
+                ⬇️ 下载图片
+              </button>
             </div>
           </div>
         </div>
@@ -348,10 +398,11 @@ const ProcessingDetail = ({ project, user, onBack }) => {
 
       {/* 成功提示模态框 */}
       {showSuccessModal && (
-        <div className="success-modal">
-          <div className="success-content">
+        <div className="success-modal-overlay">
+          <div className="success-modal-content">
             <div className="success-icon">✅</div>
             <div className="success-message">推送成功！</div>
+            <p style={{ margin: '16px 0 0 0', color: '#718096', fontSize: '14px' }}>项目已推送到第一次入库阶段</p>
           </div>
         </div>
       )}
