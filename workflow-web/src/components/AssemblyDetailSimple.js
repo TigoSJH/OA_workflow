@@ -389,7 +389,7 @@ const AssemblyDetailSimple = ({ project, user, onBack }) => {
               </div>
               <button 
                 className="btn-download-preview"
-                onClick={() => handleDownloadImage(previewImage, previewImage.stage || 'assembly')}
+                onClick={() => handleDownloadImage(previewImage, previewImage.stage)}
               >
                 ⬇️ 下载图片
               </button>

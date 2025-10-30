@@ -610,16 +610,37 @@ exports.deleteProject = async (req, res) => {
     
     for (const stage of stages) {
       try {
-        const folderPath = path.join(BASE_UPLOAD_PATH, stage, folderName);
+        const stagePath = path.join(BASE_UPLOAD_PATH, stage);
         
-        if (fs.existsSync(folderPath)) {
-          // 递归删除文件夹及其内容
-          fs.rmSync(folderPath, { recursive: true, force: true });
-          console.log(`[DELETE] ✓ 已删除 ${stage}/${folderName}`);
-          deletedCount++;
+        // 确保阶段目录存在
+        if (!fs.existsSync(stagePath)) {
+          continue;
+        }
+        
+        // 查找所有以项目ID开头的文件夹（兼容不同的命名规则）
+        const allFolders = fs.readdirSync(stagePath);
+        const projectFolders = allFolders.filter(folder => {
+          return folder === projectId || folder.startsWith(`${projectId}_`);
+        });
+        
+        // 删除找到的所有相关文件夹
+        for (const folder of projectFolders) {
+          const folderPath = path.join(stagePath, folder);
+          
+          try {
+            if (fs.existsSync(folderPath) && fs.statSync(folderPath).isDirectory()) {
+              // 递归删除文件夹及其内容
+              fs.rmSync(folderPath, { recursive: true, force: true });
+              console.log(`[DELETE] ✓ 已删除 ${stage}/${folder}`);
+              deletedCount++;
+            }
+          } catch (err) {
+            console.error(`[DELETE] ❌ 删除 ${stage}/${folder} 失败:`, err.message);
+            errorCount++;
+          }
         }
       } catch (err) {
-        console.error(`[DELETE] ❌ 删除 ${stage}/${folderName} 失败:`, err.message);
+        console.error(`[DELETE] ❌ 处理阶段 ${stage} 失败:`, err.message);
         errorCount++;
       }
     }

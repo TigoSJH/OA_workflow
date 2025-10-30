@@ -155,8 +155,14 @@ const ArchiveDetail = ({ projectId, user, onBack }) => {
   };
 
   // 图片预览
-  const handleImagePreview = async (imageData, stage = 'assembly') => {
+  const handleImagePreview = async (imageData, stage) => {
     try {
+      if (!stage) {
+        console.error('[归档预览] 缺少stage参数');
+        alert('预览失败：缺少阶段信息');
+        return;
+      }
+      
       if (imageData.filename) {
         console.log('[归档预览] stage:', stage, 'filename:', imageData.filename);
         const viewUrl = fileAPI.viewFile(stage, project.id, imageData.filename, project.projectName);
@@ -185,8 +191,14 @@ const ArchiveDetail = ({ projectId, user, onBack }) => {
   };
 
   // 下载图片
-  const handleDownloadImage = async (imageData, stage = 'assembly') => {
+  const handleDownloadImage = async (imageData, stage) => {
     try {
+      if (!stage) {
+        console.error('[归档下载] 缺少stage参数');
+        alert('下载失败：缺少阶段信息');
+        return;
+      }
+      
       if (imageData.filename) {
         await fileAPI.downloadFile(stage, project.id, imageData.filename, project.projectName);
       } else {
@@ -209,7 +221,7 @@ const ArchiveDetail = ({ projectId, user, onBack }) => {
   };
 
   // 渲染文件夹
-  const renderFileFolder = (folderName, displayName, files, icon = '📁', stage = 'assembly') => {
+  const renderFileFolder = (folderName, displayName, files, icon = '📁', stage) => {
     const isExpanded = expandedFolders[folderName];
     const fileCount = files ? files.length : 0;
 
@@ -663,7 +675,7 @@ const ArchiveDetail = ({ projectId, user, onBack }) => {
               </div>
               <button 
                 className="btn-download-preview"
-                onClick={() => handleDownloadImage(previewImage, previewImage.stage || 'assembly')}
+                onClick={() => handleDownloadImage(previewImage, previewImage.stage)}
               >
                 ⬇️ 下载图片
               </button>

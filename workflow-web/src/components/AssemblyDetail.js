@@ -178,13 +178,12 @@ const AssemblyDetail = ({ project, user, onBack }) => {
     }
   };
 
-  // 下载图片
   // 处理图片预览
-  const handleImagePreview = async (imageData) => {
+  const handleImagePreview = async (imageData, stage = 'assembly') => {
     try {
       // 如果是新文件系统（有filename），使用fetch获取并转换为blob URL
       if (imageData.filename) {
-        const viewUrl = fileAPI.viewFile('assembly', project.id, imageData.filename, project.projectName);
+        const viewUrl = fileAPI.viewFile(stage, project.id, imageData.filename, project.projectName);
         const response = await fetch(viewUrl, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -211,11 +210,11 @@ const AssemblyDetail = ({ project, user, onBack }) => {
   };
 
   // 下载图片
-  const handleDownloadImage = async (imageData) => {
+  const handleDownloadImage = async (imageData, stage = 'assembly') => {
     try {
       // 如果是新文件系统（有filename），使用API下载
       if (imageData.filename) {
-        await fileAPI.downloadFile('assembly', project.id, imageData.filename, project.projectName);
+        await fileAPI.downloadFile(stage, project.id, imageData.filename, project.projectName);
       } else {
         // 兼容旧的Base64数据
         const dataUrl = imageData.url || imageData.data || imageData.preview;
