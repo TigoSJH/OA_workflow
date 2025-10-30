@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './ProjectProcessing.css';
+import ProcessingDetail from './ProcessingDetail';
 import ProcessingDetailTeam from './ProcessingDetailTeam';
 import NotificationModal from './NotificationModal';
 import DeadlineWarningModal from './DeadlineWarningModal';
@@ -143,10 +144,18 @@ const ProjectProcessing = ({ user, onLogout, activeRole, onRoleSwitch }) => {
     completed: projects.filter(p => p.processingCompleted).length,
   };
 
+  // 判断当前用户是否为加工主负责人
+  const isProcessingPrimaryLeader = user.isPrimaryLeader && 
+                                     user.primaryLeaderRoles && 
+                                     user.primaryLeaderRoles.includes('processor');
+
   // 如果选中了项目，显示加工详情页
   if (selectedProject) {
+    // 主负责人使用 ProcessingDetail，团队成员使用 ProcessingDetailTeam
+    const DetailComponent = isProcessingPrimaryLeader ? ProcessingDetail : ProcessingDetailTeam;
+    
     return (
-      <ProcessingDetailTeam
+      <DetailComponent
         project={selectedProject}
         user={user}
         onBack={() => {

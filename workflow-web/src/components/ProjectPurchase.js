@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './ProjectPurchase.css';
+import PurchaseDetail from './PurchaseDetail';
 import PurchaseDetailTeam from './PurchaseDetailTeam';
 import NotificationModal from './NotificationModal';
 import DeadlineWarningModal from './DeadlineWarningModal';
@@ -143,10 +144,18 @@ const ProjectPurchase = ({ user, onLogout, activeRole, onRoleSwitch }) => {
     completed: projects.filter(p => p.purchaseCompleted).length,
   };
 
+  // 判断当前用户是否为采购主负责人
+  const isPurchasePrimaryLeader = user.isPrimaryLeader && 
+                                   user.primaryLeaderRoles && 
+                                   user.primaryLeaderRoles.includes('purchaser');
+
   // 如果选中了项目，显示采购详情页
   if (selectedProject) {
+    // 主负责人使用 PurchaseDetail，团队成员使用 PurchaseDetailTeam
+    const DetailComponent = isPurchasePrimaryLeader ? PurchaseDetail : PurchaseDetailTeam;
+    
     return (
-      <PurchaseDetailTeam
+      <DetailComponent
         project={selectedProject}
         user={user}
         onBack={() => {
