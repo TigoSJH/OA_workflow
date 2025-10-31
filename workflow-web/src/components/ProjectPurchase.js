@@ -278,6 +278,10 @@ const ProjectPurchase = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                   <div className="project-type">
                     🛒 采购项目
                   </div>
+                  <span className={`priority priority-${project.priority || 'normal'}`}>
+                    {project.priority === 'high' ? '🔴 高优先级' : 
+                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
+                  </span>
                   <span className={`status-badge status-${project.purchaseCompleted ? 'completed' : 'pending'}`}>
                     {project.purchaseCompleted ? '✅ 已完成' : '⏳ 待采购'}
                   </span>

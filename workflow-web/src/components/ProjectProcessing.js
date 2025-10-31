@@ -278,6 +278,10 @@ const ProjectProcessing = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                   <div className="project-type">
                     🔧 加工项目
                   </div>
+                  <span className={`priority priority-${project.priority || 'normal'}`}>
+                    {project.priority === 'high' ? '🔴 高优先级' : 
+                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
+                  </span>
                   <span className={`status-badge status-${project.processingCompleted ? 'completed' : 'pending'}`}>
                     {project.processingCompleted ? '✅ 已完成' : '⏳ 待加工'}
                   </span>

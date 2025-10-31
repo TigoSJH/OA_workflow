@@ -269,6 +269,10 @@ const ProjectAssembly = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                   <div className="project-type">
                     🔩 装配项目
                   </div>
+                  <span className={`priority priority-${project.priority || 'normal'}`}>
+                    {project.priority === 'high' ? '🔴 高优先级' : 
+                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
+                  </span>
                   <span className={`status-badge status-${project.assemblyCompleted ? 'completed' : 'pending'}`}>
                     {project.assemblyCompleted ? '✅ 已完成' : '⏳ 待装配'}
                   </span>
