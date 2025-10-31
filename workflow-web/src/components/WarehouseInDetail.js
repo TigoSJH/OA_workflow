@@ -172,6 +172,60 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
     e.target.value = '';
   };
 
+  // 处理整机图片上传（第二次入库）
+  const handleMachineImagesSelect = async (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    
+    if (selectedFiles.length === 0) return;
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    for (let file of selectedFiles) {
+      if (!allowedTypes.includes(file.type)) {
+        alert('只能上传图片文件（JPG、PNG、GIF、WebP）');
+        return;
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        alert(`图片 ${file.name} 超过20MB限制`);
+        return;
+      }
+    }
+
+    try {
+      setUploading(true);
+      
+      console.log(`[整机入库上传] 准备上传 ${selectedFiles.length} 个整机图片，正在压缩...`);
+      
+      // 智能压缩图片
+      const compressedFiles = await smartCompressMultiple(selectedFiles, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+        threshold: 1
+      });
+      
+      console.log('[整机入库上传] 压缩完成，开始上传到服务器...');
+      
+      // 上传文件到文件系统
+      const uploadedFiles = await uploadFilesToServer(compressedFiles, 'warehouseIn');
+      const updatedFiles = [...machineImages, ...uploadedFiles];
+      setMachineImages(updatedFiles);
+
+      // 立即保存到数据库
+      await projectAPI.updateProject(project.id, {
+        machineImages: updatedFiles
+      });
+
+      setUploading(false);
+      console.log('[整机入库上传] 整机图片上传并保存成功');
+    } catch (error) {
+      setUploading(false);
+      console.error('[整机入库上传] 整机图片处理失败:', error.message);
+      alert('上传失败：' + error.message);
+    }
+
+    e.target.value = '';
+  };
+
   // 删除图片
   const handleDeleteImage = async (index, targetSetter, currentList, imageName, fieldName) => {
     try {
@@ -852,7 +906,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
                   id="machine-images-upload"
                   multiple
                   accept="image/*"
-                  onChange={(e) => handleImageUpload(e, setMachineImages, machineImages, 'warehouseIn')}
+                  onChange={handleMachineImagesSelect}
                   style={{ display: 'none' }}
                 />
                 <label htmlFor="machine-images-upload" className="upload-box">
