@@ -257,6 +257,13 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
         };
       } else {
         // 第一次入库
+        console.log('========== 准备推送入库数据 ==========');
+        console.log('purchaseComponents 数量:', purchaseComponents.length);
+        console.log('purchaseComponents 内容:', purchaseComponents);
+        console.log('processingComponents 数量:', processingComponents.length);
+        console.log('processingComponents 内容:', processingComponents);
+        console.log('=====================================');
+        
         updateData = {
           warehouseInCompleted: true,
           warehouseInCompletedTime: new Date().toISOString(),
@@ -264,9 +271,12 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
           purchaseComponents,
           processingComponents
         };
+        
+        console.log('完整的 updateData:', updateData);
       }
       
       const response = await projectAPI.updateProject(project.id, updateData);
+      console.log('推送响应:', response);
 
       console.log('推送成功:', response);
       setLoading(false);
