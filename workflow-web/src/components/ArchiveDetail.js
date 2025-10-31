@@ -571,19 +571,27 @@ const ArchiveDetail = ({ projectId, user, onBack }) => {
           )}
 
           {renderFileFolder(
-            'purchaseSection',
-            '采购清单',
-            project.purchaseDocuments || [],
+            'firstWarehouseInPurchaseSection',
+            '第一次入库图片（采购）',
+            project.purchaseComponents || [],
             '📦',
-            'purchase'
+            'warehouseIn'
           )}
 
           {renderFileFolder(
-            'processingSection',
-            '加工图片',
-            project.processingImages || [],
+            'firstWarehouseInProcessingSection',
+            '第一次入库图片（加工）',
+            project.processingComponents || [],
             '⚙️',
-            'processing'
+            'warehouseIn'
+          )}
+
+          {renderFileFolder(
+            'secondWarehouseInMachineSection',
+            '第二次入库图片（整机）',
+            project.machineImages || [],
+            '🏭',
+            'warehouseIn'
           )}
         </div>
 
