@@ -1,25 +1,70 @@
 import React, { useState, useEffect } from 'react';
 import './ProjectArchive.css';
 import RoleBadges from './RoleBadges';
-import { projectAPI } from '../services/api';
+import NotificationModal from './NotificationModal';
+import { projectAPI, notificationAPI } from '../services/api';
 
 const ProjectArchive = ({ user, onLogout, onBackToHome, onProjectSelect, activeRole, onRoleSwitch }) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // all: 全部, unarchived: 待归档, archived: 已归档
+  const [pendingNotification, setPendingNotification] = useState(null);
 
   useEffect(() => {
     loadProjects();
   }, []);
+
+  // 加载通知
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!user) return;
+      
+      try {
+        const res = await notificationAPI.getNotifications({ 
+          unreadOnly: true,
+          type: 'project_ready_for_archive'
+        });
+        const list = (res.notifications || []).slice();
+        
+        // 过滤掉已经被抑制的通知，并验证项目确实已经下发
+        const suppressId = localStorage.getItem('suppressNotificationProjectId');
+        const filtered = list.filter(n => {
+          const pid = String(n.projectId || '');
+          // 过滤掉已抑制的通知
+          if (suppressId && pid === String(suppressId)) return false;
+          
+          // 验证项目是否在可见列表中（已下发）
+          const projectExists = projects.some(p => String(p.id) === pid);
+          if (!projectExists) {
+            console.log(`通知对应的项目 ${pid} 尚未下发，暂不显示通知`);
+            return false;
+          }
+          
+          return true;
+        });
+        
+        console.log('[归档] 过滤后的通知:', filtered.length, '条');
+        if (filtered.length > 0) {
+          setPendingNotification(filtered[0]);
+        }
+      } catch (err) {
+        console.error('[归档] 获取通知失败:', err);
+      }
+    };
+    
+    if (projects.length > 0) {
+      fetchNotifications();
+    }
+  }, [projects, user]);
 
   const loadProjects = async () => {
     try {
       setLoading(true);
       const response = await projectAPI.getProjects({ status: 'approved' });
       
-      // 只显示出库完成的项目（包括第一次和第二次出库）
+      // 只显示第二次出库完成的项目（等待归档）
       const completedProjects = (response.projects || []).filter(p => 
-        p.warehouseOutCompleted === true || p.warehouseOutSecondCompleted === true
+        p.warehouseOutSecondCompleted === true
       );
       setProjects(completedProjects);
     } catch (error) {
@@ -43,6 +88,39 @@ const ProjectArchive = ({ user, onLogout, onBackToHome, onProjectSelect, activeR
     if (activeTab === 'archived') return project.archived;
     return true;
   });
+
+  // 处理通知
+  const handleNotificationClick = async (projectId) => {
+    console.log('[归档] 点击通知，查看项目:', projectId);
+    // 标记通知已读
+    if (pendingNotification && pendingNotification._id) {
+      try {
+        await notificationAPI.markAsRead(pendingNotification._id);
+        console.log('[归档] 通知已标记为已读');
+      } catch (err) {
+        console.error('[归档] 标记通知失败:', err);
+      }
+    }
+    setPendingNotification(null);
+    // 切换到待归档标签
+    setActiveTab('unarchived');
+    // 跳转到项目详情
+    onProjectSelect(projectId);
+  };
+
+  const handleNotificationClose = async () => {
+    console.log('[归档] 关闭通知');
+    // 标记通知已读
+    if (pendingNotification && pendingNotification._id) {
+      try {
+        await notificationAPI.markAsRead(pendingNotification._id);
+        console.log('[归档] 通知已标记为已读');
+      } catch (err) {
+        console.error('[归档] 标记通知失败:', err);
+      }
+    }
+    setPendingNotification(null);
+  };
 
   return (
     <div className="archive-container">
@@ -164,6 +242,15 @@ const ProjectArchive = ({ user, onLogout, onBackToHome, onProjectSelect, activeR
           </div>
         )}
       </div>
+
+      {/* 通知弹窗 */}
+      {pendingNotification && (
+        <NotificationModal
+          notification={pendingNotification}
+          onViewProject={handleNotificationClick}
+          onClose={handleNotificationClose}
+        />
+      )}
     </div>
   );
 };
