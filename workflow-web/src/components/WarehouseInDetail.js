@@ -12,7 +12,8 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
   
   // 判断是第一次还是第二次入库
   const isSecondWarehouseIn = project.testingCompleted === true && project.warehouseInCompleted === true;
-  const [isCompleted] = useState(isSecondWarehouseIn ? !!project.warehouseInSecondCompleted : !!project.warehouseInCompleted);
+  // 直接从 project 计算，不使用 state（这样 project 更新时会自动更新）
+  const isCompleted = isSecondWarehouseIn ? !!project.warehouseInSecondCompleted : !!project.warehouseInCompleted;
   const [expandedFolders, setExpandedFolders] = useState({});
 
   // 第一次入库需要上传的图片
