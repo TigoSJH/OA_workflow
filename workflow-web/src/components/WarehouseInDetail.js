@@ -895,26 +895,24 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
               <h3 className="section-title">整机图片上传</h3>
             </div>
 
-            <div className="upload-grid">
-              <div className="upload-column">
-                <div className="upload-column-header">
-                  <span className="upload-icon">🏭</span>
-                  <h4>整机实体图片</h4>
-                </div>
-                <input
-                  type="file"
-                  id="machine-images-upload"
-                  multiple
-                  accept="image/*"
-                  onChange={handleMachineImagesSelect}
-                  style={{ display: 'none' }}
-                />
-                <label htmlFor="machine-images-upload" className="upload-box">
-                  <div className="upload-icon-large">📷</div>
-                  <div className="upload-text">点击上传整机图片</div>
-                  <div className="upload-hint">支持 JPG、PNG、GIF 等格式</div>
-                </label>
+            <div style={{ width: '100%' }}>
+              <div className="upload-column-header" style={{ marginBottom: '16px' }}>
+                <span className="upload-icon">🏭</span>
+                <h4>整机实体图片</h4>
               </div>
+              <input
+                type="file"
+                id="machine-images-upload"
+                multiple
+                accept="image/*"
+                onChange={handleMachineImagesSelect}
+                style={{ display: 'none' }}
+              />
+              <label htmlFor="machine-images-upload" className="upload-box" style={{ width: '100%', maxWidth: 'none' }}>
+                <div className="upload-icon-large">📷</div>
+                <div className="upload-text">点击上传整机图片</div>
+                <div className="upload-hint">支持 JPG、PNG、GIF 等格式</div>
+              </label>
             </div>
           </div>
         )}
