@@ -287,10 +287,6 @@ const ProjectEngineering = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                   <div className="project-type">
                     {project.projectType === 'research' ? '🔬 研发项目' : '📄 合同项目'}
                   </div>
-                  <span className={`priority priority-${project.priority || 'normal'}`}>
-                    {project.priority === 'high' ? '🔴 高优先级' : 
-                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
-                  </span>
                   <span className={`status-badge ${project.engineeringCompleted ? 'status-completed' : 'status-pending'}`}>
                     {project.engineeringCompleted ? '✅ 已完成工程' : '🛠️ 工程中'}
                   </span>
@@ -301,6 +297,10 @@ const ProjectEngineering = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                   <span>🎯 研发方向：{project.researchDirection || '未设置'}</span>
                   <span>💰 预算：{project.budget ? `${project.budget} 万` : '未设置'}</span>
                   <span>⏱️ 时长：{project.duration ? `${project.duration} 月` : '未设置'}</span>
+                  <span className={`priority priority-${project.priority || 'normal'}`}>
+                    {project.priority === 'high' ? '🔴 高优先级' : 
+                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
+                  </span>
                 </div>
                 {/* 显示剩余天数 */}
                 {!project.engineeringCompleted && calculateRemainingDays(project) !== null && (

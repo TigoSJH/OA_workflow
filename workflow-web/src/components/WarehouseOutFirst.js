@@ -258,10 +258,6 @@ const WarehouseOutFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchT
                   <div className="project-type-badge">
                     {project.projectType === 'research' ? '🔬 研发立项' : '📝 合同立项'}
                   </div>
-                  <span className={`priority priority-${project.priority || 'normal'}`}>
-                    {project.priority === 'high' ? '🔴 高优先级' : 
-                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
-                  </span>
                   <div className={`status-badge ${activeTab === 'pending' ? 'status-pending' : 'status-completed'}`}>
                     {activeTab === 'pending' ? '⏳ 待出库' : '✅ 已完成'}
                   </div>
@@ -276,6 +272,10 @@ const WarehouseOutFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchT
                   {project.warehouseOutCompletedTime && (
                     <span>🕒 完成时间：{new Date(project.warehouseOutCompletedTime).toLocaleString()}</span>
                   )}
+                  <span className={`priority priority-${project.priority || 'normal'}`}>
+                    {project.priority === 'high' ? '🔴 高优先级' : 
+                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
+                  </span>
                 </div>
               </div>
             ))}

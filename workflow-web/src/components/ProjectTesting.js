@@ -269,10 +269,6 @@ const ProjectTesting = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                   <div className="project-type">
                     🔍 调试项目
                   </div>
-                  <span className={`priority priority-${project.priority || 'normal'}`}>
-                    {project.priority === 'high' ? '🔴 高优先级' : 
-                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
-                  </span>
                   <span className={`status-badge status-${project.testingCompleted ? 'completed' : 'pending'}`}>
                     {project.testingCompleted ? '✅ 已完成' : '⏳ 待调试'}
                   </span>
@@ -284,6 +280,10 @@ const ProjectTesting = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                   <span>👤 申请人：{project.createdByName || '未知'}</span>
                   <span>📅 时间：{project.createTime ? new Date(project.createTime).toLocaleString('zh-CN') : '未知'}</span>
                   <span>⏰ 时长：{project.duration ? `${project.duration} 月` : '未设置'}</span>
+                  <span className={`priority priority-${project.priority || 'normal'}`}>
+                    {project.priority === 'high' ? '🔴 高优先级' : 
+                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
+                  </span>
                 </div>
                 {!project.testingCompleted && calculateRemainingDays(project) !== null && (
                   <div className={`remaining-days ${calculateRemainingDays(project) <= 3 ? 'urgent' : ''}`}>

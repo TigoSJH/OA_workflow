@@ -138,10 +138,6 @@ const ProjectArchive = ({ user, onLogout, onBackToHome, onProjectSelect, activeR
                   <div className="project-type-badge">
                     {project.projectType === 'research' ? '🔬 研发立项' : '📝 合同立项'}
                   </div>
-                  <span className={`priority priority-${project.priority || 'normal'}`}>
-                    {project.priority === 'high' ? '🔴 高优先级' : 
-                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
-                  </span>
                   <div className={`status-badge ${project.archived ? 'status-archived' : 'status-pending'}`}>
                     {project.archived ? '✅ 已归档' : '📥 待归档'}
                   </div>
@@ -152,6 +148,10 @@ const ProjectArchive = ({ user, onLogout, onBackToHome, onProjectSelect, activeR
                   <span>💰 预算：{project.budget ? `${project.budget} 万` : '未设置'}</span>
                   <span>👤 申请人：{project.createdByName || '未知'}</span>
                   <span>📅 出库完成：{project.warehouseOutCompletedTime ? new Date(project.warehouseOutCompletedTime).toLocaleDateString('zh-CN') : '未知'}</span>
+                  <span className={`priority priority-${project.priority || 'normal'}`}>
+                    {project.priority === 'high' ? '🔴 高优先级' : 
+                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
+                  </span>
                 </div>
                 {project.archived && project.archivedBy && (
                   <div className="archive-info">

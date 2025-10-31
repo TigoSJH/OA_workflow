@@ -278,10 +278,6 @@ const ProjectProcessing = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                   <div className="project-type">
                     🔧 加工项目
                   </div>
-                  <span className={`priority priority-${project.priority || 'normal'}`}>
-                    {project.priority === 'high' ? '🔴 高优先级' : 
-                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
-                  </span>
                   <span className={`status-badge status-${project.processingCompleted ? 'completed' : 'pending'}`}>
                     {project.processingCompleted ? '✅ 已完成' : '⏳ 待加工'}
                   </span>
@@ -293,6 +289,10 @@ const ProjectProcessing = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                   <span>👤 申请人：{project.createdByName || '未知'}</span>
                   <span>📅 时间：{project.createTime ? new Date(project.createTime).toLocaleString('zh-CN') : '未知'}</span>
                   <span>⏰ 时长：{project.duration ? `${project.duration} 月` : '未设置'}</span>
+                  <span className={`priority priority-${project.priority || 'normal'}`}>
+                    {project.priority === 'high' ? '🔴 高优先级' : 
+                     project.priority === 'urgent' ? '🟠 紧急' : '🟢 普通'}
+                  </span>
                 </div>
                 {!project.processingCompleted && calculateRemainingDays(project) !== null && (
                   <div className={`remaining-days ${calculateRemainingDays(project) <= 3 ? 'urgent' : ''}`}>
