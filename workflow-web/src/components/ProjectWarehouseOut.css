@@ -136,17 +136,20 @@
 .stats-container {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 20px;
   margin-bottom: 24px;
+  max-width: 100%;
 }
 
 .stat-card {
-  padding: 24px 20px;
+  padding: 32px 24px;
   border-radius: 12px;
   text-align: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   border: 1px solid rgba(0, 0, 0, 0.05);
+  min-width: 0;
+  flex: 1;
 }
 
 .stat-card:hover {
