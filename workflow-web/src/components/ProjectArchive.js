@@ -17,9 +17,9 @@ const ProjectArchive = ({ user, onLogout, onBackToHome, onProjectSelect, activeR
       setLoading(true);
       const response = await projectAPI.getProjects({ status: 'approved' });
       
-      // 只显示出库完成的项目
+      // 只显示出库完成的项目（包括第一次和第二次出库）
       const completedProjects = (response.projects || []).filter(p => 
-        p.warehouseOutCompleted === true
+        p.warehouseOutCompleted === true || p.warehouseOutSecondCompleted === true
       );
       setProjects(completedProjects);
     } catch (error) {
