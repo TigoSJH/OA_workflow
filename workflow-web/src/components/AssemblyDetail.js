@@ -107,41 +107,9 @@ const AssemblyDetail = ({ project, user, onBack }) => {
     e.target.value = '';
   };
 
-  // 处理装配图片上传
-  const handleAssemblyImageSelect = async (e) => {
-    await handleUploadCommon(e, setAssemblyImages, assemblyImages);
-  };
+  // 装配阶段无需上传图片
 
-  // 删除装配图片
-  const handleDeleteAssemblyImage = (index) => {
-    // 显示删除中提示
-    const toast = document.createElement('div');
-    toast.textContent = '🗑️ 正在删除...';
-    toast.style.cssText = `
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.85);
-      color: white;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 500;
-      z-index: 10000;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      animation: fadeIn 0.2s ease-in-out;
-    `;
-    document.body.appendChild(toast);
-    
-    const newImages = assemblyImages.filter((_, i) => i !== index);
-    setAssemblyImages(newImages);
-    
-    // 1秒后移除提示
-    setTimeout(() => {
-      document.body.removeChild(toast);
-    }, 1000);
-  };
+  // 装配阶段无需删除图片
 
   // 推送到下一阶段
   const handlePushToNextStage = async () => {
@@ -155,8 +123,7 @@ const AssemblyDetail = ({ project, user, onBack }) => {
       const response = await projectAPI.updateProject(project.id, {
         assemblyCompleted: true,
         assemblyCompletedTime: new Date().toISOString(),
-        assemblyCompletedBy: user.displayName || user.username,
-        assemblyImages: assemblyImages
+        assemblyCompletedBy: user.displayName || user.username
       });
 
       console.log('推送成功:', response);
@@ -473,45 +440,19 @@ const AssemblyDetail = ({ project, user, onBack }) => {
           )}
         </div>
 
-        {/* 装配图片 */}
-        <div className="detail-section">
-          <div className="section-header">
-            <span className="section-icon">📝</span>
-            <h3 className="section-title">装配图片</h3>
-          </div>
-
-          {/* 上传区域（未完成时显示） */}
-          {!isCompleted && (
-            <div className="upload-actions-area">
-              <div className="upload-group">
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleAssemblyImageSelect}
-                  id="assembly-image-upload"
-                  style={{ display: 'none' }}
-                  accept="image/*"
-                />
-                <label htmlFor="assembly-image-upload" className="upload-button">
-                  📤 上传装配图片
-                </label>
-                <div className="upload-hint-inline">
-                  支持JPG、PNG、GIF、WebP格式，单张最大5MB
-                </div>
-              </div>
+        {/* 装配说明（装配无需上传图片） */}
+        {!isCompleted && (
+          <div className="detail-section">
+            <div className="section-header">
+              <span className="section-icon">ℹ️</span>
+              <h3 className="section-title">装配说明</h3>
             </div>
-          )}
-
-          {/* 装配图片列表：仅在有图片时显示 */}
-          {assemblyImages && assemblyImages.length > 0 && renderFileFolder(
-            'assemblyImages',
-            '装配图片',
-            assemblyImages,
-            '🖼️',
-            true,
-            handleDeleteAssemblyImage
-          )}
-        </div>
+            <div className="testing-notice">
+              <p>🛠️ 装配阶段无需上传图片或文件。</p>
+              <p>✅ 完成装配工作后，点击下方按钮推送到调试阶段。</p>
+            </div>
+          </div>
+        )}
 
         {/* 底部操作栏（未完成时才显示推送按钮） */}
         {!isCompleted && (
