@@ -124,17 +124,21 @@ app.get('/api/files/view/:stage/:projectId/:filename', auth, (req, res) => {
     const { stage, projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
     
-    // 使用与上传一致的文件夹命名规则：projectId_projectName
+    // 计算多种可能路径，兼容不同命名规则
     const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim();
-    const folderName = safeName ? `${projectId}_${safeName}` : projectId;
+    const candidates = [];
+    if (safeName) {
+      candidates.push(path.join(BASE_UPLOAD_PATH, stage, `${projectId}_${safeName}`, filename)); // ID_名称
+      candidates.push(path.join(BASE_UPLOAD_PATH, stage, safeName, filename)); // 仅名称
+    }
+    candidates.push(path.join(BASE_UPLOAD_PATH, stage, projectId, filename)); // 仅ID
+
+    const filePath = candidates.find(p => fs.existsSync(p));
     
-    const filePath = path.join(BASE_UPLOAD_PATH, stage, folderName, filename);
+    console.log('[VIEW] 预览请求:', { stage, projectId, projectName, filename, candidates, found: filePath });
     
-    console.log('[VIEW] 预览请求:', { stage, projectId, projectName, filename, folderName, filePath });
-    
-    if (!fs.existsSync(filePath)) {
-      console.log('[VIEW] ❌ 文件不存在:', filePath);
-      return res.status(404).json({ error: '文件不存在', path: filePath });
+    if (!filePath) {
+      return res.status(404).json({ error: '文件不存在' });
     }
     
     console.log('[VIEW] ✓ 文件存在，发送文件');
@@ -151,17 +155,21 @@ app.get('/api/files/download/:stage/:projectId/:filename', auth, (req, res) => {
     const { stage, projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
     
-    // 使用与上传一致的文件夹命名规则：projectId_projectName
+    // 计算多种可能路径，兼容不同命名规则
     const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim();
-    const folderName = safeName ? `${projectId}_${safeName}` : projectId;
+    const candidates = [];
+    if (safeName) {
+      candidates.push(path.join(BASE_UPLOAD_PATH, stage, `${projectId}_${safeName}`, filename));
+      candidates.push(path.join(BASE_UPLOAD_PATH, stage, safeName, filename));
+    }
+    candidates.push(path.join(BASE_UPLOAD_PATH, stage, projectId, filename));
+
+    const filePath = candidates.find(p => fs.existsSync(p));
     
-    const filePath = path.join(BASE_UPLOAD_PATH, stage, folderName, filename);
+    console.log('[DOWNLOAD] 下载请求:', { stage, projectId, projectName, filename, candidates, found: filePath });
     
-    console.log('[DOWNLOAD] 下载请求:', { stage, projectId, projectName, filename, folderName, filePath });
-    
-    if (!fs.existsSync(filePath)) {
-      console.log('[DOWNLOAD] ❌ 文件不存在:', filePath);
-      return res.status(404).json({ error: '文件不存在', path: filePath });
+    if (!filePath) {
+      return res.status(404).json({ error: '文件不存在' });
     }
     
     // 使用 download 方法，浏览器会弹出下载对话框
@@ -286,6 +294,12 @@ app.post('/api/files/copy-to-stage', auth, async (req, res) => {
       return res.json({ success: true, message: '没有文件需要复制' });
     }
     
+    // 禁止在无需要的阶段创建目录
+    if (toStage === 'assembly' || toStage === 'warehouseIn') {
+      console.log('[COPY] 跳过创建不需要的阶段目录:', toStage);
+      return res.json({ success: true, copiedCount: 0, totalCount: files.length, message: `跳过阶段 ${toStage}` });
+    }
+    
     const safeName = (projectName || '').replace(/[<>:"/\\|?*]/g, '_').trim();
     const folderName = safeName ? `${projectId}_${safeName}` : projectId;
     
@@ -402,16 +416,19 @@ app.get('/api/files/view-contract/:projectId/:filename', auth, (req, res) => {
     const { projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
     
-    // 使用与图片相同的命名规则：projectId_projectName
+    // 兼容不同命名规则
     const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim();
-    const folderName = safeName ? `${projectId}_${safeName}` : projectId;
+    const candidates = [];
+    if (safeName) {
+      candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', `${projectId}_${safeName}`, filename));
+      candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', safeName, filename));
+    }
+    candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', projectId, filename));
+    const filePath = candidates.find(p => fs.existsSync(p));
     
-    const filePath = path.join(BASE_UPLOAD_PATH, 'contracts', folderName, filename);
+    console.log('[合同预览] 请求:', { projectId, projectName, filename, candidates, found: filePath });
     
-    console.log('[合同预览] 请求:', { projectId, projectName, filename, folderName, filePath });
-    
-    if (!fs.existsSync(filePath)) {
-      console.log('[合同预览] ❌ 文件不存在:', filePath);
+    if (!filePath) {
       return res.status(404).json({ error: '合同文件不存在' });
     }
     
@@ -429,16 +446,19 @@ app.get('/api/files/download-contract/:projectId/:filename', auth, (req, res) =>
     const { projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
     
-    // 使用与图片相同的命名规则：projectId_projectName
+    // 兼容不同命名规则
     const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim();
-    const folderName = safeName ? `${projectId}_${safeName}` : projectId;
+    const candidates = [];
+    if (safeName) {
+      candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', `${projectId}_${safeName}`, filename));
+      candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', safeName, filename));
+    }
+    candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', projectId, filename));
+    const filePath = candidates.find(p => fs.existsSync(p));
     
-    const filePath = path.join(BASE_UPLOAD_PATH, 'contracts', folderName, filename);
+    console.log('[合同下载] 请求:', { projectId, projectName, filename, candidates, found: filePath });
     
-    console.log('[合同下载] 请求:', { projectId, projectName, filename, folderName, filePath });
-    
-    if (!fs.existsSync(filePath)) {
-      console.log('[合同下载] ❌ 文件不存在:', filePath);
+    if (!filePath) {
       return res.status(404).json({ error: '合同文件不存在' });
     }
     

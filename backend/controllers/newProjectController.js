@@ -1258,7 +1258,10 @@ exports.deleteProject = async (req, res) => {
           // 查找所有以项目ID开头的文件夹（兼容不同的命名规则）
           const allFolders = fs.readdirSync(stagePath);
           const projectFolders = allFolders.filter(folder => {
-            return folder === projectId || folder.startsWith(`${projectId}_`);
+            // 兼容：仅ID、ID_名称、仅名称、任意ID_名称（名称匹配）
+            const matchById = folder === projectId || folder.startsWith(`${projectId}_`);
+            const matchByName = safeName ? (folder === safeName || folder.endsWith(`_${safeName}`)) : false;
+            return matchById || matchByName;
           });
           
           // 删除找到的所有相关文件夹
