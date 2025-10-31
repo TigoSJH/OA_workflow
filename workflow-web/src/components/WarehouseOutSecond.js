@@ -98,8 +98,14 @@ const WarehouseOutSecond = ({ user, onLogout, activeRole, onRoleSwitch, onSwitch
     completed: projects.filter(p => p.warehouseOutSecondCompleted === true).length
   };
 
-  const handleProjectClick = (project) => {
-    setSelectedProject(project);
+  const handleProjectClick = async (project) => {
+    try {
+      const resp = await projectAPI.getProjectById(project.id);
+      setSelectedProject(resp.project || project);
+    } catch (e) {
+      console.error('获取项目详情失败，使用列表数据回退:', e);
+      setSelectedProject(project);
+    }
   };
 
   const handleBackToList = () => {
@@ -123,7 +129,13 @@ const WarehouseOutSecond = ({ user, onLogout, activeRole, onRoleSwitch, onSwitch
 
     const project = projects.find(p => String(p.id) === String(projectId));
     if (project) {
-      setSelectedProject(project);
+      try {
+        const resp = await projectAPI.getProjectById(project.id);
+        setSelectedProject(resp.project || project);
+      } catch (e) {
+        console.error('获取项目详情失败，使用列表数据回退:', e);
+        setSelectedProject(project);
+      }
       setPendingNotification(null);
     }
   };
@@ -170,7 +182,13 @@ const WarehouseOutSecond = ({ user, onLogout, activeRole, onRoleSwitch, onSwitch
             setPendingNotification(null);
             const project = projects.find(p => String(p.id) === String(n.projectId));
             if (project) {
-              setSelectedProject(project);
+              try {
+                const resp = await projectAPI.getProjectById(project.id);
+                setSelectedProject(resp.project || project);
+              } catch (e) {
+                console.error('获取项目详情失败，使用列表数据回退:', e);
+                setSelectedProject(project);
+              }
             }
           }}
           onDismiss={handleSuppressNotification}

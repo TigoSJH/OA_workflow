@@ -92,8 +92,15 @@ const WarehouseOutFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchT
     completed: projects.filter(p => p.warehouseOutCompleted === true).length
   };
 
-  const handleProjectClick = (project) => {
-    setSelectedProject(project);
+  const handleProjectClick = async (project) => {
+    try {
+      // 进入详情前，拉取最新完整数据（包含入库图片数组）
+      const resp = await projectAPI.getProjectById(project.id);
+      setSelectedProject(resp.project || project);
+    } catch (e) {
+      console.error('获取项目详情失败，使用列表数据回退:', e);
+      setSelectedProject(project);
+    }
   };
 
   const handleBackToList = () => {
@@ -117,7 +124,13 @@ const WarehouseOutFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchT
 
     const project = projects.find(p => String(p.id) === String(projectId));
     if (project) {
-      setSelectedProject(project);
+      try {
+        const resp = await projectAPI.getProjectById(project.id);
+        setSelectedProject(resp.project || project);
+      } catch (e) {
+        console.error('获取项目详情失败，使用列表数据回退:', e);
+        setSelectedProject(project);
+      }
       setPendingNotification(null);
     }
   };
