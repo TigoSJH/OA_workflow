@@ -290,17 +290,11 @@ const WarehouseInFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchTo
                 <p className="project-description">{project.description}</p>
                 <div className="project-meta">
                   <span>📅 创建时间：{new Date(project.createTime).toLocaleDateString()}</span>
-                  {project.researchBudget && (
-                    <span>💰 预算：{project.researchBudget} 万</span>
+                  {(project.researchBudget || project.budget) && (
+                    <span>💰 预算：{project.researchBudget || project.budget} 万</span>
                   )}
-                  {project.budget && (
-                    <span>💰 预算：{project.budget} 万</span>
-                  )}
-                  {project.researchDuration && (
-                    <span>⏱️ 时长：{project.researchDuration} 月</span>
-                  )}
-                  {project.duration && (
-                    <span>⏱️ 时长：{project.duration} 月</span>
+                  {(project.researchDuration || project.duration) && (
+                    <span>⏱️ 时长：{project.researchDuration || project.duration} 月</span>
                   )}
                   {project.warehouseInCompletedBy && (
                     <span>👤 入库人：{project.warehouseInCompletedBy}</span>
