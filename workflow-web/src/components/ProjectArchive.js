@@ -247,8 +247,8 @@ const ProjectArchive = ({ user, onLogout, onBackToHome, onProjectSelect, activeR
       {pendingNotification && (
         <NotificationModal
           notification={pendingNotification}
-          onViewProject={handleNotificationClick}
-          onClose={handleNotificationClose}
+          onView={(notif) => handleNotificationClick(notif.projectId)}
+          onDismiss={() => handleNotificationClose()}
         />
       )}
     </div>
