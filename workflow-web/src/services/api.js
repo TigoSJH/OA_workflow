@@ -219,6 +219,12 @@ export const projectAPI = {
     return api.get(`/projects/${projectId}`);
   },
 
+  // 获取项目详情（别名，为了兼容）
+  getProjectById: async (projectId) => {
+    const api = new ApiService();
+    return api.get(`/projects/${projectId}`);
+  },
+
   // 创建项目
   createProject: async (projectData) => {
     const api = new ApiService();
