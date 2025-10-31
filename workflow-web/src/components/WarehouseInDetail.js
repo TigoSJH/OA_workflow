@@ -829,45 +829,6 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
           </div>
         )}
 
-        {/* 入库完成信息 */}
-        {isCompleted && (
-          <div className="detail-section">
-            <div className="section-header">
-              <span className="section-icon">✅</span>
-              <h3 className="section-title">入库状况</h3>
-            </div>
-            <div className="completion-info">
-              <div className="status-item">
-                <span className="status-label">完成状态：</span>
-                <span className="status-text status-completed">
-                  ✅ 已完成{isSecondWarehouseIn ? '整机' : ''}入库工作
-                </span>
-              </div>
-              <div className="status-item">
-                <span className="status-label">完成时间：</span>
-                <span className="status-text">
-                  {new Date(
-                    isSecondWarehouseIn 
-                      ? project.warehouseInSecondCompletedTime 
-                      : project.warehouseInCompletedTime
-                  ).toLocaleString('zh-CN')}
-                </span>
-              </div>
-              <div className="status-item">
-                <span className="status-label">操作人：</span>
-                <span className="status-text">
-                  {isSecondWarehouseIn 
-                    ? project.warehouseInSecondCompletedBy 
-                    : project.warehouseInCompletedBy}
-                </span>
-              </div>
-              <div className="completion-notice">
-                <p>✨ 此项目已推送到{isSecondWarehouseIn ? '出库确认' : '出库'}阶段</p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* 第二次入库：显示第一次入库图片（只读） */}
         {isSecondWarehouseIn && !isCompleted && (
           <div className="detail-section">
@@ -983,6 +944,45 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
               )}
             </div>
           </>
+        )}
+
+        {/* 入库完成信息 */}
+        {isCompleted && (
+          <div className="detail-section">
+            <div className="section-header">
+              <span className="section-icon">✅</span>
+              <h3 className="section-title">入库状况</h3>
+            </div>
+            <div className="completion-info">
+              <div className="status-item">
+                <span className="status-label">完成状态：</span>
+                <span className="status-text status-completed">
+                  ✅ 已完成{isSecondWarehouseIn ? '整机' : ''}入库工作
+                </span>
+              </div>
+              <div className="status-item">
+                <span className="status-label">完成时间：</span>
+                <span className="status-text">
+                  {new Date(
+                    isSecondWarehouseIn 
+                      ? project.warehouseInSecondCompletedTime 
+                      : project.warehouseInCompletedTime
+                  ).toLocaleString('zh-CN')}
+                </span>
+              </div>
+              <div className="status-item">
+                <span className="status-label">操作人：</span>
+                <span className="status-text">
+                  {isSecondWarehouseIn 
+                    ? project.warehouseInSecondCompletedBy 
+                    : project.warehouseInCompletedBy}
+                </span>
+              </div>
+              <div className="completion-notice">
+                <p>✨ 此项目已推送到{isSecondWarehouseIn ? '出库确认' : '出库'}阶段</p>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* 推送按钮 */}
