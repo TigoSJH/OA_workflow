@@ -271,6 +271,9 @@ exports.getProjectById = async (req, res) => {
       warehouseInCompleted: project.warehouseInCompleted,
       warehouseInCompletedTime: project.warehouseInCompletedTime,
       warehouseInCompletedBy: usernameToDisplayName.get(project.warehouseInCompletedBy) || project.warehouseInCompletedBy,
+      // 入库阶段图片（第一次入库：零部件/加工件）
+      purchaseComponents: project.purchaseComponents,
+      processingComponents: project.processingComponents,
       // 第二次入库阶段（整机）
       warehouseInSecondCompleted: project.warehouseInSecondCompleted,
       warehouseInSecondCompletedTime: project.warehouseInSecondCompletedTime,
