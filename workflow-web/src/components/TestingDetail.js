@@ -32,8 +32,8 @@ const TestingDetail = ({ project, user, onBack }) => {
   const [expandedFolders, setExpandedFolders] = useState({
     rdSection: false,
     engSection: false,
-    purchaseSection: false,
-    processingSection: false
+    purchaseComponentsSection: false,
+    processingComponentsSection: false
   });
 
   // 切换文件夹展开状态
@@ -292,11 +292,11 @@ const TestingDetail = ({ project, user, onBack }) => {
           </div>
         </div>
 
-        {/* 图纸文件 */}
+        {/* 参考图纸 */}
         <div className="detail-section">
           <div className="section-header">
             <span className="section-icon">📁</span>
-            <h3 className="section-title">项目文件</h3>
+            <h3 className="section-title">参考图纸</h3>
           </div>
 
           {renderFileFolder(
@@ -317,28 +317,29 @@ const TestingDetail = ({ project, user, onBack }) => {
             'engineering'
           )}
 
+        </div>
+
+        {/* 已上传的入库图片（只读） */}
+        <div className="detail-section">
+          <div className="section-header">
+            <span className="section-icon">📸</span>
+            <h3 className="section-title">已上传的入库图片</h3>
+          </div>
+
           {renderFileFolder(
-            'purchaseSection',
-            '采购清单',
-            project.purchaseDocuments || [],
-            '🛒',
-            'purchase'
+            'purchaseComponentsSection',
+            '零部件图片（采购）',
+            project.purchaseComponents || [],
+            '📦',
+            'warehouseIn'
           )}
 
           {renderFileFolder(
-            'processingSection',
-            '加工图片',
-            project.processingImages || [],
+            'processingComponentsSection',
+            '加工件图片（加工）',
+            project.processingComponents || [],
             '⚙️',
-            'processing'
-          )}
-          
-          {renderFileFolder(
-            'assemblySection',
-            '装配图片',
-            project.assemblyImages || [],
-            '🔧',
-            'assembly'
+            'warehouseIn'
           )}
         </div>
 

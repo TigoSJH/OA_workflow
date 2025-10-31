@@ -385,11 +385,11 @@ const AssemblyDetail = ({ project, user, onBack }) => {
           </div>
         </div>
 
-        {/* 图纸文件 - 统一顶层文件夹 */}
+        {/* 参考图纸 */}
         <div className="detail-section">
           <div className="section-header">
             <span className="section-icon">📁</span>
-            <h3 className="section-title">图纸文件</h3>
+            <h3 className="section-title">参考图纸</h3>
           </div>
 
           {/* 研发图纸文件夹 */}
@@ -417,26 +417,33 @@ const AssemblyDetail = ({ project, user, onBack }) => {
             'engineering'
           )}
 
-          {/* 采购清单文件夹 */}
+        </div>
+
+        {/* 已上传的入库图片（只读，来自 warehouseIn） */}
+        <div className="detail-section">
+          <div className="section-header">
+            <span className="section-icon">📸</span>
+            <h3 className="section-title">已上传的入库图片</h3>
+          </div>
+
           {renderFileFolder(
-            'purchaseSection',
-            '采购清单',
-            project.purchaseDocuments || [],
-            '🛒',
+            'purchaseComponentsSection',
+            '零部件图片（采购）',
+            project.purchaseComponents || [],
+            '📦',
             false,
             null,
-            'purchase'
+            'warehouseIn'
           )}
 
-          {/* 加工图片文件夹 */}
           {renderFileFolder(
-            'processingSection',
-            '加工图片',
-            project.processingImages || [],
-            '🔧',
+            'processingComponentsSection',
+            '加工件图片（加工）',
+            project.processingComponents || [],
+            '⚙️',
             false,
             null,
-            'processing'
+            'warehouseIn'
           )}
         </div>
 
