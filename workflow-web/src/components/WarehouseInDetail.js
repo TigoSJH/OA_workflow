@@ -32,8 +32,10 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
     console.log('是否已完成:', isCompleted);
     console.log('原始 project.purchaseComponents:', project.purchaseComponents);
     console.log('原始 project.processingComponents:', project.processingComponents);
+    console.log('原始 project.machineImages:', project.machineImages);
     console.log('purchaseComponents 数量:', (project.purchaseComponents || []).length);
     console.log('processingComponents 数量:', (project.processingComponents || []).length);
+    console.log('machineImages 数量:', (project.machineImages || []).length);
     console.log('=====================================');
     
     setPurchaseComponents(project.purchaseComponents || []);
@@ -308,6 +310,11 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
       let updateData;
       if (isSecondWarehouseIn) {
         // 第二次入库（整机入库）
+        console.log('========== 准备推送第二次入库数据 ==========');
+        console.log('machineImages 数量:', machineImages.length);
+        console.log('machineImages 内容:', machineImages);
+        console.log('=====================================');
+        
         if (machineImages.length === 0) {
           alert('请先上传整机图片后再推送');
           setLoading(false);
@@ -319,6 +326,8 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
           warehouseInSecondCompletedBy: user.displayName || user.username,
           machineImages: machineImages
         };
+        
+        console.log('第二次入库完整的 updateData:', updateData);
       } else {
         // 第一次入库
         console.log('========== 准备推送入库数据 ==========');
