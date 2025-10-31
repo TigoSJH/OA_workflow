@@ -95,8 +95,8 @@ const WarehouseInFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchTo
   const handleProjectClick = async (project) => {
     try {
       // 重新获取完整的项目数据（包括 purchaseComponents 和 processingComponents）
-      const fullProject = await projectAPI.getProjectById(project.id);
-      setSelectedProject(fullProject);
+      const response = await projectAPI.getProjectById(project.id);
+      setSelectedProject(response.project);
     } catch (error) {
       console.error('获取项目详情失败:', error);
       // 如果获取失败，还是使用列表中的数据
@@ -125,8 +125,8 @@ const WarehouseInFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchTo
 
     try {
       // 重新获取完整的项目数据
-      const fullProject = await projectAPI.getProjectById(projectId);
-      setSelectedProject(fullProject);
+      const response = await projectAPI.getProjectById(projectId);
+      setSelectedProject(response.project);
       setPendingNotification(null);
     } catch (error) {
       console.error('获取项目详情失败:', error);
@@ -181,8 +181,8 @@ const WarehouseInFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchTo
             setPendingNotification(null);
             // 重新获取完整的项目数据
             try {
-              const fullProject = await projectAPI.getProjectById(n.projectId);
-              setSelectedProject(fullProject);
+              const response = await projectAPI.getProjectById(n.projectId);
+              setSelectedProject(response.project);
             } catch (error) {
               console.error('获取项目详情失败:', error);
               const project = projects.find(p => String(p.id) === String(n.projectId));
