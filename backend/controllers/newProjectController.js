@@ -303,6 +303,14 @@ exports.getProjectById = async (req, res) => {
       teamMemberProcessingUploads: project.teamMemberProcessingUploads,
       teamMemberAssemblyUploads: project.teamMemberAssemblyUploads
     }});
+    
+    console.log('[getProjectById] ⭐ Returning machineImages count:', (project.machineImages || []).length);
+    if (project.machineImages && project.machineImages.length > 0) {
+      console.log('[getProjectById] machineImages[0]:', {
+        name: project.machineImages[0].name,
+        filename: project.machineImages[0].filename
+      });
+    }
   } catch (error) {
     console.error('获取项目详情错误:', error);
     res.status(500).json({ error: '获取项目详情失败' });
@@ -839,21 +847,23 @@ exports.updateProject = async (req, res) => {
     try {
       if (Array.isArray(updateData.folderScreenshots)) {
         console.log('[updateProject] folderScreenshots count:', updateData.folderScreenshots.length);
-        if (updateData.folderScreenshots[0]) {
-          console.log('[sample folderScreenshot]', {
-            name: updateData.folderScreenshots[0].name,
-            size: updateData.folderScreenshots[0].size,
-            type: updateData.folderScreenshots[0].type
-          });
-        }
       }
       if (Array.isArray(updateData.drawingImages)) {
         console.log('[updateProject] drawingImages count:', updateData.drawingImages.length);
-        if (updateData.drawingImages[0]) {
-          console.log('[sample drawingImage]', {
-            name: updateData.drawingImages[0].name,
-            size: updateData.drawingImages[0].size,
-            type: updateData.drawingImages[0].type
+      }
+      if (Array.isArray(updateData.purchaseComponents)) {
+        console.log('[updateProject] purchaseComponents count:', updateData.purchaseComponents.length);
+      }
+      if (Array.isArray(updateData.processingComponents)) {
+        console.log('[updateProject] processingComponents count:', updateData.processingComponents.length);
+      }
+      if (Array.isArray(updateData.machineImages)) {
+        console.log('[updateProject] ⭐ machineImages count:', updateData.machineImages.length);
+        if (updateData.machineImages[0]) {
+          console.log('[sample machineImage]', {
+            name: updateData.machineImages[0].name,
+            size: updateData.machineImages[0].size,
+            filename: updateData.machineImages[0].filename
           });
         }
       }
@@ -887,6 +897,9 @@ exports.updateProject = async (req, res) => {
     console.log('[updateProject] after updateOne counts:', {
       folderScreenshots: Array.isArray(fresh.folderScreenshots) ? fresh.folderScreenshots.length : 'N/A',
       drawingImages: Array.isArray(fresh.drawingImages) ? fresh.drawingImages.length : 'N/A',
+      purchaseComponents: Array.isArray(fresh.purchaseComponents) ? fresh.purchaseComponents.length : 'N/A',
+      processingComponents: Array.isArray(fresh.processingComponents) ? fresh.processingComponents.length : 'N/A',
+      machineImages: Array.isArray(fresh.machineImages) ? fresh.machineImages.length : 'N/A',
     });
     
     // 如果研发刚完成，通知所有工程师并设置工程阶段开始时间
