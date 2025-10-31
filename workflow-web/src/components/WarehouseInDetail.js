@@ -22,6 +22,17 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
 
   // 当 project 变化时，更新状态
   useEffect(() => {
+    console.log('========== 入库图片调试信息 ==========');
+    console.log('项目ID:', project.id);
+    console.log('项目名称:', project.projectName);
+    console.log('是否第二次入库:', isSecondWarehouseIn);
+    console.log('是否已完成:', isCompleted);
+    console.log('原始 project.purchaseComponents:', project.purchaseComponents);
+    console.log('原始 project.processingComponents:', project.processingComponents);
+    console.log('purchaseComponents 数量:', (project.purchaseComponents || []).length);
+    console.log('processingComponents 数量:', (project.processingComponents || []).length);
+    console.log('=====================================');
+    
     setPurchaseComponents(project.purchaseComponents || []);
     setProcessingComponents(project.processingComponents || []);
   }, [project]);
@@ -326,6 +337,13 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
 
   // 渲染文件夹（只读或可删除）
   const renderFileFolder = (folderName, displayName, files, icon = '📁', stage = 'warehouseIn', deleteHandler = null) => {
+    console.log(`[renderFileFolder] ${displayName}:`, {
+      folderName,
+      files,
+      fileCount: files ? files.length : 0,
+      stage
+    });
+    
     const isExpanded = expandedFolders[folderName];
     const fileCount = files ? files.length : 0;
 
