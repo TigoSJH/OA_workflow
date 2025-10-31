@@ -48,11 +48,8 @@ const AssemblyDetailTeam = ({ project, user, onBack }) => {
   const [expandedFolders, setExpandedFolders] = useState({
     rdSection: false,
     engSection: false,
-    purchaseSection: false,
-    processingSection: false,
-    myUploadSection: false,
-    teamUploadsSection: false,
-    assemblySection: false
+    purchaseComponentsSection: false,
+    processingComponentsSection: false
   });
 
   // 切换文件夹展开状态
@@ -338,8 +335,7 @@ const AssemblyDetailTeam = ({ project, user, onBack }) => {
       const response = await projectAPI.updateProject(project.id, {
         assemblyCompleted: true,
         assemblyCompletedTime: new Date().toISOString(),
-        assemblyCompletedBy: user.displayName || user.username,
-        assemblyImages: assemblyImages
+        assemblyCompletedBy: user.displayName || user.username
       });
 
       console.log('推送成功:', response);
@@ -564,11 +560,11 @@ const AssemblyDetailTeam = ({ project, user, onBack }) => {
           </div>
         </div>
 
-        {/* 图纸文件 */}
+        {/* 参考图纸 */}
         <div className="detail-section">
           <div className="section-header">
             <span className="section-icon">📁</span>
-            <h3 className="section-title">图纸文件</h3>
+            <h3 className="section-title">参考图纸</h3>
           </div>
 
           {renderFileFolder(
@@ -587,170 +583,33 @@ const AssemblyDetailTeam = ({ project, user, onBack }) => {
             '🛠️'
           )}
 
-          {renderFileFolder(
-            'purchaseSection',
-            '采购清单',
-            project.purchaseDocuments || [],
-            '🛒'
-          )}
-
-          {renderFileFolder(
-            'processingSection',
-            '加工图片',
-            project.processingImages || [],
-            '⚙️'
-          )}
         </div>
 
-        {/* 装配图片 */}
+        {/* 已上传的入库图片（只读，来自 warehouseIn） */}
         <div className="detail-section">
           <div className="section-header">
-            <span className="section-icon">📝</span>
-            <h3 className="section-title">装配图片</h3>
+            <span className="section-icon">📸</span>
+            <h3 className="section-title">已上传的入库图片</h3>
           </div>
 
-          {/* 上传区域 */}
-          {!isCompleted && (
-            <div className="upload-actions-area">
-              <div className="upload-group">
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileSelect}
-                  id="assembly-upload"
-                  style={{ display: 'none' }}
-                  accept="image/*"
-                />
-                <label htmlFor="assembly-upload" className="upload-button">
-                  📤 {isPrimaryLeader ? '上传装配图片（主负责人）' : '上传装配图片'}
-                </label>
-                <div className="upload-hint-inline">
-                  支持JPG、PNG、GIF、WebP格式，单张最大5MB
-                </div>
-              </div>
-            </div>
+          {renderFileFolder(
+            'purchaseComponentsSection',
+            '零部件图片（采购）',
+            project.purchaseComponents || [],
+            '📦',
+            false,
+            null,
+            'warehouseIn'
           )}
 
-          {/* 普通成员：我的上传 */}
-          {!isPrimaryLeader && allMyFiles.length > 0 && (
-            <div style={{ marginTop: '20px' }}>
-              {renderFileFolder(
-                'myUploadSection',
-                '我的上传',
-                allMyFiles,
-                '📤',
-                true,
-                handleDeleteFile
-              )}
-              
-              {!isCompleted && myUploadFiles.length > 0 && (
-                <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                  <button
-                    className="btn-push-bottom"
-                    onClick={handleSubmitToLeader}
-                    disabled={loading}
-                  >
-                    {loading ? '提交中...' : `✅ 确认提交给主负责人 (${myUploadFiles.length} 个新文件)`}
-                  </button>
-                  <p className="submit-hint">
-                    请确认图片无误后再提交，提交后由主负责人统一整合并推送
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* 主负责人：团队成员上传区域 */}
-          {isPrimaryLeader && project.teamMemberAssemblyUploads && project.teamMemberAssemblyUploads.length > 0 && (() => {
-            const pendingMembers = project.teamMemberAssemblyUploads.filter(upload => 
-              upload.files.some(file => !file.integratedAt)
-            );
-            const integratedMembers = project.teamMemberAssemblyUploads.filter(upload => 
-              upload.files.every(file => file.integratedAt)
-            );
-            
-            return (
-              <div className="team-uploads-section">
-                {pendingMembers.length > 0 && (
-                  <>
-                    <div className="team-uploads-header">
-                      <h4 className="team-uploads-title">👥 团队成员上传的图片（待整合）</h4>
-                      <span className="team-uploads-count">
-                        {pendingMembers.length} 个成员待整合
-                      </span>
-                    </div>
-                    
-                    {pendingMembers.map((memberUpload, index) => {
-                      const pendingFiles = memberUpload.files.filter(file => !file.integratedAt);
-                      
-                      return (
-                        <div key={index} className="member-upload-card">
-                          <div className="member-upload-header">
-                            <div className="member-info">
-                              <span className="member-icon">👤</span>
-                              <span className="member-name">{memberUpload.uploaderName}</span>
-                              <span className="upload-time">
-                                {new Date(memberUpload.uploadTime).toLocaleString('zh-CN')}
-                              </span>
-                            </div>
-                            <span className="member-status pending">
-                              ⏳ 待整合 ({pendingFiles.length} 个新文件)
-                            </span>
-                          </div>
-                          <div className="member-files-preview">
-                            {pendingFiles.slice(0, 3).map((file, idx) => (
-                              <div key={idx} className="file-preview-thumb">
-                                <img 
-                                  src={file.url || file.data} 
-                                  alt={file.name}
-                                  style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }}
-                                />
-                              </div>
-                            ))}
-                            {pendingFiles.length > 3 && (
-                              <div className="more-files">+{pendingFiles.length - 3}</div>
-                            )}
-                          </div>
-                          <div className="member-actions">
-                            <button
-                              className="btn-integrate"
-                              onClick={() => handleIntegrateMemberFiles(memberUpload)}
-                            >
-                              ✅ 整合到装配图片 ({pendingFiles.length} 个)
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </>
-                )}
-                
-                {integratedMembers.length > 0 && (
-                  <div style={{ marginTop: '20px' }}>
-                    <div style={{ 
-                      padding: '10px 15px', 
-                      background: '#f0f9ff', 
-                      borderRadius: '8px',
-                      color: '#52c41a',
-                      fontSize: '14px'
-                    }}>
-                      ✅ 已整合 {integratedMembers.length} 个成员的图片
-                      （{integratedMembers.map(m => m.uploaderName).join('、')}）
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-
-          {/* 主负责人：已整合的装配图片 */}
-          {isPrimaryLeader && assemblyImages.length > 0 && renderFileFolder(
-            'assemblySection',
-            '装配图片（已整合）',
-            assemblyImages,
-            '🖼️',
-            true,
-            (index) => handleDeleteFile(index, false)
+          {renderFileFolder(
+            'processingComponentsSection',
+            '加工件图片（加工）',
+            project.processingComponents || [],
+            '⚙️',
+            false,
+            null,
+            'warehouseIn'
           )}
         </div>
 
