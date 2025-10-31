@@ -336,6 +336,28 @@ const approvedProjectSchema = new mongoose.Schema({
     type: String
   },
 
+  // 第一次入库时由库管上传的图片
+  purchaseComponents: [{
+    name: String,
+    filename: String,
+    path: String,
+    relativePath: String,
+    size: String,
+    mimetype: String,
+    uploadTime: Date,
+    uploadBy: String
+  }],
+  processingComponents: [{
+    name: String,
+    filename: String,
+    path: String,
+    relativePath: String,
+    size: String,
+    mimetype: String,
+    uploadTime: Date,
+    uploadBy: String
+  }],
+
   // 出库阶段相关（第一次出库：装配前领料）
   warehouseOutCompleted: {
     type: Boolean,
