@@ -143,6 +143,18 @@ const ProjectTesting = ({ user, onLogout, activeRole, onRoleSwitch }) => {
     completed: projects.filter(p => p.testingCompleted).length,
   };
 
+  // 处理项目点击 - 先拉取完整数据
+  const handleProjectClick = async (project) => {
+    try {
+      // 进入详情前，拉取最新完整数据（包含入库图片数组）
+      const resp = await projectAPI.getProjectById(project.id);
+      setSelectedProject(resp.project || project);
+    } catch (e) {
+      console.error('获取项目详情失败，使用列表数据回退:', e);
+      setSelectedProject(project);
+    }
+  };
+
   // 如果选中了项目，显示调试详情页
   if (selectedProject) {
     return (
@@ -262,7 +274,7 @@ const ProjectTesting = ({ user, onLogout, activeRole, onRoleSwitch }) => {
               <div 
                 key={project.id} 
                 className="project-card"
-                onClick={() => setSelectedProject(project)}
+                onClick={() => handleProjectClick(project)}
                 style={{ cursor: 'pointer' }}
               >
                 <div className="project-header">
@@ -314,7 +326,7 @@ const ProjectTesting = ({ user, onLogout, activeRole, onRoleSwitch }) => {
             if (proj) {
               // 项目已下发，打开详情页
               localStorage.setItem('suppressNotificationProjectId', String(n.projectId));
-              setSelectedProject(proj);
+              handleProjectClick(proj);
             } else {
               // 项目不存在或尚未下发，重新加载项目列表
               console.log('项目尚未下发到调试阶段');
@@ -335,7 +347,7 @@ const ProjectTesting = ({ user, onLogout, activeRole, onRoleSwitch }) => {
         warning={deadlineWarning}
         onOpenProject={(project) => {
           setDeadlineWarning(null);
-          setSelectedProject(project);
+          handleProjectClick(project);
         }}
         onDismiss={(warningKey) => {
           const dismissedWarnings = JSON.parse(localStorage.getItem('dismissedDeadlineWarnings') || '{}');
