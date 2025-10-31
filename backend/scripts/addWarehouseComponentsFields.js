@@ -26,15 +26,22 @@ async function addWarehouseComponentsFields() {
       process.exit(0);
     }
 
-    // 批量更新
+    // 批量更新（使用 updateOne 避免触发验证）
     for (const project of projectsToUpdate) {
+      const updateFields = {};
+      
       if (!project.purchaseComponents) {
-        project.purchaseComponents = [];
+        updateFields.purchaseComponents = [];
       }
       if (!project.processingComponents) {
-        project.processingComponents = [];
+        updateFields.processingComponents = [];
       }
-      await project.save();
+      
+      await Project.updateOne(
+        { _id: project._id },
+        { $set: updateFields }
+      );
+      
       console.log(`✓ 更新项目: ${project.projectName} (ID: ${project._id})`);
     }
 
