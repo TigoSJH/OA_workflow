@@ -98,8 +98,16 @@ const WarehouseInSecond = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchT
     completed: projects.filter(p => p.warehouseInSecondCompleted === true).length
   };
 
-  const handleProjectClick = (project) => {
-    setSelectedProject(project);
+  const handleProjectClick = async (project) => {
+    try {
+      // 重新获取完整的项目数据（包括 purchaseComponents 和 processingComponents）
+      const fullProject = await projectAPI.getProjectById(project.id);
+      setSelectedProject(fullProject);
+    } catch (error) {
+      console.error('获取项目详情失败:', error);
+      // 如果获取失败，还是使用列表中的数据
+      setSelectedProject(project);
+    }
   };
 
   const handleBackToList = () => {

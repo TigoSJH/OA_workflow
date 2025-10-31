@@ -92,8 +92,16 @@ const WarehouseInFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchTo
     completed: projects.filter(p => p.warehouseInCompleted === true).length
   };
 
-  const handleProjectClick = (project) => {
-    setSelectedProject(project);
+  const handleProjectClick = async (project) => {
+    try {
+      // 重新获取完整的项目数据（包括 purchaseComponents 和 processingComponents）
+      const fullProject = await projectAPI.getProjectById(project.id);
+      setSelectedProject(fullProject);
+    } catch (error) {
+      console.error('获取项目详情失败:', error);
+      // 如果获取失败，还是使用列表中的数据
+      setSelectedProject(project);
+    }
   };
 
   const handleBackToList = () => {
@@ -115,10 +123,19 @@ const WarehouseInFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchTo
       }
     }
 
-    const project = projects.find(p => String(p.id) === String(projectId));
-    if (project) {
-      setSelectedProject(project);
+    try {
+      // 重新获取完整的项目数据
+      const fullProject = await projectAPI.getProjectById(projectId);
+      setSelectedProject(fullProject);
       setPendingNotification(null);
+    } catch (error) {
+      console.error('获取项目详情失败:', error);
+      // 如果获取失败，尝试使用列表中的数据
+      const project = projects.find(p => String(p.id) === String(projectId));
+      if (project) {
+        setSelectedProject(project);
+        setPendingNotification(null);
+      }
     }
   };
 
@@ -162,9 +179,16 @@ const WarehouseInFirst = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchTo
               await notificationAPI.markAsRead(n._id || n.id);
             } catch {}
             setPendingNotification(null);
-            const project = projects.find(p => String(p.id) === String(n.projectId));
-            if (project) {
-              setSelectedProject(project);
+            // 重新获取完整的项目数据
+            try {
+              const fullProject = await projectAPI.getProjectById(n.projectId);
+              setSelectedProject(fullProject);
+            } catch (error) {
+              console.error('获取项目详情失败:', error);
+              const project = projects.find(p => String(p.id) === String(n.projectId));
+              if (project) {
+                setSelectedProject(project);
+              }
             }
           }}
           onDismiss={handleSuppressNotification}
