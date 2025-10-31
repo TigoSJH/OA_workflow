@@ -438,6 +438,9 @@ exports.getAllProjects = async (req, res) => {
         warehouseInCompleted: project.warehouseInCompleted,
         warehouseInCompletedTime: project.warehouseInCompletedTime,
         warehouseInCompletedBy: usernameToDisplayName.get(project.warehouseInCompletedBy) || project.warehouseInCompletedBy,
+        // 入库阶段上传的图片（用于出库页面展示）
+        purchaseComponents: project.purchaseComponents,
+        processingComponents: project.processingComponents,
         // 第二次入库阶段（整机）
         warehouseInSecondCompleted: project.warehouseInSecondCompleted,
         warehouseInSecondCompletedTime: project.warehouseInSecondCompletedTime,
