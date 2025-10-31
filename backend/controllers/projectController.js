@@ -223,7 +223,14 @@ exports.getProject = async (req, res) => {
         teamMemberEngineeringUploads: project.teamMemberEngineeringUploads,
         teamMemberPurchaseUploads: project.teamMemberPurchaseUploads,
         teamMemberProcessingUploads: project.teamMemberProcessingUploads,
-        teamMemberAssemblyUploads: project.teamMemberAssemblyUploads
+        teamMemberAssemblyUploads: project.teamMemberAssemblyUploads,
+        // 入库阶段库管上传的图片
+        purchaseComponents: project.purchaseComponents,
+        processingComponents: project.processingComponents,
+        // 第二次入库
+        warehouseInSecondCompleted: project.warehouseInSecondCompleted,
+        warehouseInSecondCompletedTime: project.warehouseInSecondCompletedTime,
+        warehouseInSecondCompletedBy: usernameToDisplayName.get(project.warehouseInSecondCompletedBy) || project.warehouseInSecondCompletedBy
       }
     });
   } catch (error) {
