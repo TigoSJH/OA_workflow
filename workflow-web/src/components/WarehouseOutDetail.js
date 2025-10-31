@@ -297,11 +297,11 @@ const WarehouseOutDetail = ({ project, user, onBack }) => {
           )}
         </div>
 
-        {/* 已上传的入库图片 */}
+        {/* 第一次入库图片（第一次和第二次出库都显示） */}
         <div className="detail-section">
           <div className="section-header">
             <span className="section-icon">📸</span>
-            <h3 className="section-title">已上传的入库图片</h3>
+            <h3 className="section-title">第一次入库图片（零部件/加工件）</h3>
           </div>
 
           {renderFileFolder(
@@ -320,6 +320,24 @@ const WarehouseOutDetail = ({ project, user, onBack }) => {
             'warehouseIn'
           )}
         </div>
+
+        {/* 第二次出库：显示整机图片 */}
+        {isSecondWarehouseOut && (
+          <div className="detail-section">
+            <div className="section-header">
+              <span className="section-icon">🏭</span>
+              <h3 className="section-title">第二次入库图片（整机）</h3>
+            </div>
+
+            {renderFileFolder(
+              'machineImagesSection',
+              '整机图片',
+              project.machineImages || [],
+              '🏭',
+              'warehouseIn'
+            )}
+          </div>
+        )}
 
         {/* 出库完成信息 */}
         {isCompleted && (

@@ -131,7 +131,7 @@ const WarehouseInSecond = ({ user, onLogout, activeRole, onRoleSwitch, onSwitchT
 
     const project = projects.find(p => String(p.id) === String(projectId));
     if (project) {
-      setSelectedProject(project);
+      await handleProjectClick(project);
       setPendingNotification(null);
     }
   };

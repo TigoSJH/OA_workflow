@@ -278,6 +278,8 @@ exports.getProjectById = async (req, res) => {
       warehouseInSecondCompleted: project.warehouseInSecondCompleted,
       warehouseInSecondCompletedTime: project.warehouseInSecondCompletedTime,
       warehouseInSecondCompletedBy: usernameToDisplayName.get(project.warehouseInSecondCompletedBy) || project.warehouseInSecondCompletedBy,
+      // 第二次入库时上传的整机图片
+      machineImages: project.machineImages,
       // 出库阶段（第一次）
       warehouseOutCompleted: project.warehouseOutCompleted,
       warehouseOutCompletedTime: project.warehouseOutCompletedTime,
@@ -445,6 +447,8 @@ exports.getAllProjects = async (req, res) => {
         warehouseInSecondCompleted: project.warehouseInSecondCompleted,
         warehouseInSecondCompletedTime: project.warehouseInSecondCompletedTime,
         warehouseInSecondCompletedBy: usernameToDisplayName.get(project.warehouseInSecondCompletedBy) || project.warehouseInSecondCompletedBy,
+        // 第二次入库时上传的整机图片
+        machineImages: project.machineImages,
         // 出库阶段（第一次）
         warehouseOutCompleted: project.warehouseOutCompleted,
         warehouseOutCompletedTime: project.warehouseOutCompletedTime,

@@ -381,6 +381,17 @@ const approvedProjectSchema = new mongoose.Schema({
   warehouseInSecondCompletedBy: {
     type: String
   },
+  // 第二次入库时由库管上传的整机图片
+  machineImages: [{
+    name: String,
+    filename: String,
+    path: String,
+    relativePath: String,
+    size: String,
+    mimetype: String,
+    uploadTime: Date,
+    uploadBy: String
+  }],
 
   // 第二次出库阶段相关（整机出库确认）
   warehouseOutSecondCompleted: {

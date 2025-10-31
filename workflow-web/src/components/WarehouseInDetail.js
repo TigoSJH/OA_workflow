@@ -19,6 +19,9 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
   // 第一次入库需要上传的图片
   const [purchaseComponents, setPurchaseComponents] = useState(project.purchaseComponents || []);
   const [processingComponents, setProcessingComponents] = useState(project.processingComponents || []);
+  
+  // 第二次入库需要上传的整机图片
+  const [machineImages, setMachineImages] = useState(project.machineImages || []);
 
   // 当 project 变化时，更新状态
   useEffect(() => {
@@ -35,6 +38,7 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
     
     setPurchaseComponents(project.purchaseComponents || []);
     setProcessingComponents(project.processingComponents || []);
+    setMachineImages(project.machineImages || []);
   }, [project]);
 
   const toggleFolder = (folderName) => {
@@ -250,10 +254,16 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
       let updateData;
       if (isSecondWarehouseIn) {
         // 第二次入库（整机入库）
+        if (machineImages.length === 0) {
+          alert('请先上传整机图片后再推送');
+          setLoading(false);
+          return;
+        }
         updateData = {
           warehouseInSecondCompleted: true,
           warehouseInSecondCompletedTime: new Date().toISOString(),
-          warehouseInSecondCompletedBy: user.displayName || user.username
+          warehouseInSecondCompletedBy: user.displayName || user.username,
+          machineImages: machineImages
         };
       } else {
         // 第一次入库
@@ -795,18 +805,129 @@ const WarehouseInDetail = ({ project, user, onBack }) => {
           </div>
         )}
 
-        {/* 入库说明（第二次入库） */}
+        {/* 第二次入库：显示第一次入库图片（只读） */}
         {isSecondWarehouseIn && !isCompleted && (
           <div className="detail-section">
             <div className="section-header">
-              <span className="section-icon">ℹ️</span>
-              <h3 className="section-title">入库说明</h3>
+              <span className="section-icon">📸</span>
+              <h3 className="section-title">第一次入库图片（只读）</h3>
             </div>
-            <div className="warehousein-notice">
-              <p>📦 第二次入库（整机入库）无需上传图片</p>
-              <p>✅ 完成整机入库后，点击下方按钮推送到出库确认阶段</p>
+
+            {renderFileFolder(
+              'firstPurchaseComponentsSection',
+              '零部件图片（采购）',
+              purchaseComponents,
+              '📦',
+              'warehouseIn',
+              null
+            )}
+
+            {renderFileFolder(
+              'firstProcessingComponentsSection',
+              '加工件图片（加工）',
+              processingComponents,
+              '⚙️',
+              'warehouseIn',
+              null
+            )}
+          </div>
+        )}
+
+        {/* 第二次入库：上传整机图片 */}
+        {isSecondWarehouseIn && !isCompleted && (
+          <div className="detail-section">
+            <div className="section-header">
+              <span className="section-icon">📸</span>
+              <h3 className="section-title">整机图片上传</h3>
+            </div>
+
+            <div className="upload-grid">
+              <div className="upload-column">
+                <div className="upload-column-header">
+                  <span className="upload-icon">🏭</span>
+                  <h4>整机实体图片</h4>
+                </div>
+                <input
+                  type="file"
+                  id="machine-images-upload"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, setMachineImages, machineImages, 'warehouseIn')}
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor="machine-images-upload" className="upload-box">
+                  <div className="upload-icon-large">📷</div>
+                  <div className="upload-text">点击上传整机图片</div>
+                  <div className="upload-hint">支持 JPG、PNG、GIF 等格式</div>
+                </label>
+              </div>
             </div>
           </div>
+        )}
+
+        {/* 第二次入库：已上传的整机图片 */}
+        {isSecondWarehouseIn && !isCompleted && machineImages.length > 0 && (
+          <div className="detail-section">
+            <div className="section-header">
+              <span className="section-icon">📂</span>
+              <h3 className="section-title">已上传的整机图片</h3>
+            </div>
+
+            {renderFileFolder(
+              'machineImagesSection',
+              '整机图片',
+              machineImages,
+              '🏭',
+              'warehouseIn',
+              (index) => handleDeleteImage(index, setMachineImages, machineImages, machineImages[index].filename, 'machineImages')
+            )}
+          </div>
+        )}
+
+        {/* 第二次入库：已完成时显示所有图片（只读） */}
+        {isSecondWarehouseIn && isCompleted && (
+          <>
+            <div className="detail-section">
+              <div className="section-header">
+                <span className="section-icon">📸</span>
+                <h3 className="section-title">第一次入库图片</h3>
+              </div>
+
+              {renderFileFolder(
+                'firstPurchaseComponentsSection',
+                '零部件图片（采购）',
+                purchaseComponents,
+                '📦',
+                'warehouseIn',
+                null
+              )}
+
+              {renderFileFolder(
+                'firstProcessingComponentsSection',
+                '加工件图片（加工）',
+                processingComponents,
+                '⚙️',
+                'warehouseIn',
+                null
+              )}
+            </div>
+
+            <div className="detail-section">
+              <div className="section-header">
+                <span className="section-icon">🏭</span>
+                <h3 className="section-title">整机图片</h3>
+              </div>
+
+              {renderFileFolder(
+                'machineImagesSection',
+                '整机图片',
+                machineImages || [],
+                '🏭',
+                'warehouseIn',
+                null
+              )}
+            </div>
+          </>
         )}
 
         {/* 推送按钮 */}
