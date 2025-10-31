@@ -189,16 +189,21 @@ app.get('/api/files/download-zip/:stage/:projectId', auth, (req, res) => {
     const projectName = req.query.projectName || '';
     const folderName = req.query.folderName || ''; // 可选：指定要下载的文件夹名称（如"development"、"engineering"）
     
-    // 使用与上传一致的文件夹命名规则：projectId_projectName
+    // 兼容不同命名规则，依次尝试
     const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim();
-    const projectFolderName = safeName ? `${projectId}_${safeName}` : projectId;
+    const candidates = [];
+    if (safeName) {
+      candidates.push(path.join(BASE_UPLOAD_PATH, stage, `${projectId}_${safeName}`));
+      candidates.push(path.join(BASE_UPLOAD_PATH, stage, safeName));
+    }
+    candidates.push(path.join(BASE_UPLOAD_PATH, stage, projectId));
+
+    const folderPath = candidates.find(p => fs.existsSync(p));
     
-    const folderPath = path.join(BASE_UPLOAD_PATH, stage, projectFolderName);
+    console.log('[ZIP-DOWNLOAD] 打包下载请求:', { stage, projectId, projectName, folderName, candidates, found: folderPath });
     
-    console.log('[ZIP-DOWNLOAD] 打包下载请求:', { stage, projectId, projectName, folderName, projectFolderName, folderPath });
-    
-    if (!fs.existsSync(folderPath)) {
-      console.log('[ZIP-DOWNLOAD] ❌ 文件夹不存在:', folderPath);
+    if (!folderPath) {
+      console.log('[ZIP-DOWNLOAD] ❌ 文件夹不存在');
       return res.status(404).json({ error: '文件夹不存在', path: folderPath });
     }
     
