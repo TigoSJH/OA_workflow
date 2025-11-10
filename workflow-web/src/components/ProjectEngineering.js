@@ -305,7 +305,11 @@ const ProjectEngineering = ({ user, onLogout, activeRole, onRoleSwitch }) => {
                 {/* 显示剩余天数 */}
                 {!project.engineeringCompleted && calculateRemainingDays(project) !== null && (
                   <div className={`remaining-days ${calculateRemainingDays(project) <= 3 ? 'urgent' : ''}`}>
-                    ⏰ 剩余 {calculateRemainingDays(project)} 日完成
+                    {calculateRemainingDays(project) < 0 ? (
+                      <>⏰ 已超时 {Math.abs(calculateRemainingDays(project))} 日</>
+                    ) : (
+                      <>⏰ 剩余 {calculateRemainingDays(project)} 日完成</>
+                    )}
                     {calculateRemainingDays(project) <= 3 && calculateRemainingDays(project) >= 0 && (
                       <span className="urgent-badge">紧急</span>
                     )}
