@@ -145,11 +145,17 @@ async function main() {
       // 更新admin账号：重置密码，确保不绑定手机号
       try {
         const hashedForceAdminPassword = await bcrypt.hash('QWERtyui222@', 10);
-        adminExisting.password = hashedForceAdminPassword;
-        // 确保admin不绑定手机号（如果之前有绑定，清除它）
-        adminExisting.phone = '';
-        adminExisting.phoneVerified = false;
-        await adminExisting.save();
+        // 使用 updateOne 直接更新数据库，绕过 pre-save hook（避免双重哈希）
+        await User.updateOne(
+          { _id: adminExisting._id },
+          {
+            $set: {
+              password: hashedForceAdminPassword,
+              phone: '',
+              phoneVerified: false
+            }
+          }
+        );
         console.log('✅ 已更新admin账号');
         console.log('   用户名: admin');
         console.log('   密码: QWERtyui222@');
