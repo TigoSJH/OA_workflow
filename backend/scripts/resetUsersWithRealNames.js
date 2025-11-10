@@ -115,38 +115,48 @@ async function main() {
     }
 
     // =========== 新增：创建admin超级管理员账号 ===========
+    // admin账号使用用户名+密码登录，不需要手机号
     const adminExisting = await User.findOne({ username: 'admin' });
     if (!adminExisting) {
       try {
-        const hashedAdminPassword = await bcrypt.hash('QWER', 10);
+        const hashedAdminPassword = await bcrypt.hash('QWERtyui222@', 10);
         const adminUser = new User({
           username: 'admin',
           password: hashedAdminPassword,
           displayName: '管理员',
-          phone: '',
+          phone: '', // admin不需要手机号
+          phoneVerified: false,
           roles: ['admin'],
           status: 'approved',
           isPrimaryLeader: true,
           createTime: new Date()
         });
         await adminUser.save();
-        console.log('✅ 已成功创建 admin 超级管理员账户，用户名：admin，密码：QWER');
+        console.log('✅ 已成功创建 admin 超级管理员账户');
+        console.log('   用户名: admin');
+        console.log('   密码: QWERtyui222@');
+        console.log('   登录方式: 用户名 + 密码（不需要手机号）');
         successCount++;
       } catch (e) {
         console.error('❌ 创建 admin 账户失败: ', e.message);
         failCount++;
       }
     } else {
-      // 新增: 强制重置admin密码
+      // 更新admin账号：重置密码，确保不绑定手机号
       try {
         const hashedForceAdminPassword = await bcrypt.hash('QWERtyui222@', 10);
         adminExisting.password = hashedForceAdminPassword;
+        // 确保admin不绑定手机号（如果之前有绑定，清除它）
+        adminExisting.phone = '';
+        adminExisting.phoneVerified = false;
         await adminExisting.save();
-        console.log('✅ 已存在的admin密码已强制重置为: QWERtyui222@');
+        console.log('✅ 已更新admin账号');
+        console.log('   用户名: admin');
+        console.log('   密码: QWERtyui222@');
+        console.log('   登录方式: 用户名 + 密码（不需要手机号）');
       } catch (e) {
-        console.error('❌ 强制重置admin密码失败:', e.message);
+        console.error('❌ 更新admin账号失败:', e.message);
       }
-      console.log('⚠️  admin 超级管理员账号已存在');
     }
 
     // ==================== 第四步：显示结果 ====================
@@ -192,14 +202,19 @@ async function main() {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     
     console.log('📝 重要提醒：');
-    console.log('   1. 所有新用户默认密码: 123456');
-    console.log('   2. 新用户状态为"待审批"，需要管理员登录后：');
-    console.log('      - 进入用户管理页面');
-    console.log('      - 为每个用户分配角色');
-    console.log('      - 设置主负责人（如需要）');
-    console.log('      - 批准用户');
-    console.log('   3. 用户名格式: u_手机号');
-    console.log('   4. 登录方式: 手机号验证码或用户名+密码\n');
+    console.log('   1. 【admin管理员账号】');
+    console.log('      - 用户名: admin');
+    console.log('      - 密码: QWERtyui222@');
+    console.log('      - 登录方式: 用户名 + 密码（不需要手机号）');
+    console.log('');
+    console.log('   2. 【普通用户账号】');
+    console.log('      - 登录方式: 手机号 + 短信验证码（不需要密码）');
+    console.log('      - 用户名格式: u_手机号');
+    console.log('      - 新用户状态为"待审批"，需要管理员登录后：');
+    console.log('        * 进入用户管理页面');
+    console.log('        * 为每个用户分配角色');
+    console.log('        * 设置主负责人（如需要）');
+    console.log('        * 批准用户\n');
 
     process.exit(0);
     
