@@ -114,6 +114,41 @@ async function main() {
       }
     }
 
+    // =========== 新增：创建admin超级管理员账号 ===========
+    const adminExisting = await User.findOne({ username: 'admin' });
+    if (!adminExisting) {
+      try {
+        const hashedAdminPassword = await bcrypt.hash('QWER', 10);
+        const adminUser = new User({
+          username: 'admin',
+          password: hashedAdminPassword,
+          displayName: '管理员',
+          phone: '',
+          roles: ['admin'],
+          status: 'approved',
+          isPrimaryLeader: true,
+          createTime: new Date()
+        });
+        await adminUser.save();
+        console.log('✅ 已成功创建 admin 超级管理员账户，用户名：admin，密码：QWER');
+        successCount++;
+      } catch (e) {
+        console.error('❌ 创建 admin 账户失败: ', e.message);
+        failCount++;
+      }
+    } else {
+      // 新增: 强制重置admin密码
+      try {
+        const hashedForceAdminPassword = await bcrypt.hash('QWERtyui222@', 10);
+        adminExisting.password = hashedForceAdminPassword;
+        await adminExisting.save();
+        console.log('✅ 已存在的admin密码已强制重置为: QWERtyui222@');
+      } catch (e) {
+        console.error('❌ 强制重置admin密码失败:', e.message);
+      }
+      console.log('⚠️  admin 超级管理员账号已存在');
+    }
+
     // ==================== 第四步：显示结果 ====================
     console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
     console.log(`第四步：操作总结`);
