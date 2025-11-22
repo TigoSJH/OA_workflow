@@ -416,20 +416,46 @@ app.post('/api/files/upload-contract', auth, contractUpload.single('contract'), 
 });
 
 // 预览合同文件
-app.get('/api/files/view-contract/:projectId/:filename', auth, (req, res) => {
+app.get('/api/files/view-contract/:projectId/:filename', auth, async (req, res) => {
   try {
     const { projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
     
     // 兼容不同命名规则
     const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim();
-    const candidates = [];
+    let candidates = [];
     if (safeName) {
       candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', `${projectId}_${safeName}`, filename));
       candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', safeName, filename));
     }
     candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', projectId, filename));
-    const filePath = candidates.find(p => fs.existsSync(p));
+    let filePath = candidates.find(p => fs.existsSync(p));
+    
+    // 如果使用当前projectId找不到文件，尝试查找ApprovedProject的originalPendingId
+    if (!filePath) {
+      try {
+        const ApprovedProject = require('./models/ApprovedProject');
+        const mongoose = require('mongoose');
+        if (mongoose.Types.ObjectId.isValid(projectId)) {
+          const approvedProject = await ApprovedProject.findById(projectId);
+          if (approvedProject && approvedProject.originalPendingId) {
+            const originalPendingId = String(approvedProject.originalPendingId);
+            console.log('[合同预览] 使用originalPendingId查找:', originalPendingId);
+            
+            // 使用originalPendingId重新构建候选路径
+            candidates = [];
+            if (safeName) {
+              candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', `${originalPendingId}_${safeName}`, filename));
+              candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', safeName, filename));
+            }
+            candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', originalPendingId, filename));
+            filePath = candidates.find(p => fs.existsSync(p));
+          }
+        }
+      } catch (dbError) {
+        console.log('[合同预览] 查找originalPendingId失败（可能不是ApprovedProject）:', dbError.message);
+      }
+    }
     
     console.log('[合同预览] 请求:', { projectId, projectName, filename, candidates, found: filePath });
     
@@ -446,20 +472,46 @@ app.get('/api/files/view-contract/:projectId/:filename', auth, (req, res) => {
 });
 
 // 下载合同文件
-app.get('/api/files/download-contract/:projectId/:filename', auth, (req, res) => {
+app.get('/api/files/download-contract/:projectId/:filename', auth, async (req, res) => {
   try {
     const { projectId, filename } = req.params;
     const projectName = req.query.projectName || '';
     
     // 兼容不同命名规则
     const safeName = projectName.replace(/[<>:"/\\|?*]/g, '_').trim();
-    const candidates = [];
+    let candidates = [];
     if (safeName) {
       candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', `${projectId}_${safeName}`, filename));
       candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', safeName, filename));
     }
     candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', projectId, filename));
-    const filePath = candidates.find(p => fs.existsSync(p));
+    let filePath = candidates.find(p => fs.existsSync(p));
+    
+    // 如果使用当前projectId找不到文件，尝试查找ApprovedProject的originalPendingId
+    if (!filePath) {
+      try {
+        const ApprovedProject = require('./models/ApprovedProject');
+        const mongoose = require('mongoose');
+        if (mongoose.Types.ObjectId.isValid(projectId)) {
+          const approvedProject = await ApprovedProject.findById(projectId);
+          if (approvedProject && approvedProject.originalPendingId) {
+            const originalPendingId = String(approvedProject.originalPendingId);
+            console.log('[合同下载] 使用originalPendingId查找:', originalPendingId);
+            
+            // 使用originalPendingId重新构建候选路径
+            candidates = [];
+            if (safeName) {
+              candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', `${originalPendingId}_${safeName}`, filename));
+              candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', safeName, filename));
+            }
+            candidates.push(path.join(BASE_UPLOAD_PATH, 'contracts', originalPendingId, filename));
+            filePath = candidates.find(p => fs.existsSync(p));
+          }
+        }
+      } catch (dbError) {
+        console.log('[合同下载] 查找originalPendingId失败（可能不是ApprovedProject）:', dbError.message);
+      }
+    }
     
     console.log('[合同下载] 请求:', { projectId, projectName, filename, candidates, found: filePath });
     
